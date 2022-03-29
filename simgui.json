@@ -1,0 +1,19 @@
+{
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
+      "/LiveWindow/Ungrouped/MotorControllerGroup[3]": "Motor Controller",
+      "/LiveWindow/Ungrouped/navX-Sensor[4]": "Gyro",
+      "/Shuffleboard/Data/SendableChooser[0]": "String Chooser"
+    }
+  },
+  "NetworkTables": {
+    "Shuffleboard": {
+      "Data": {
+        "open": true
+      },
+      "open": true
+    }
+  }
+}
