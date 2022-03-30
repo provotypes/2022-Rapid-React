@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.Map;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
 //import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
@@ -20,6 +22,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -39,7 +42,7 @@ public class Robot extends TimedRobot {
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(rightMotor1, rightMotor2);
   private double driveRampRate = 0.5;
 
-  private final CANSparkMax leftIntake = new CANSparkMax(6, MotorType.kBrushed);
+  private final CANSparkMax leftIntake = new CANSparkMax(7, MotorType.kBrushed);
   private final CANSparkMax rightIntake = new CANSparkMax(8, MotorType.kBrushed);
   private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
 
@@ -58,6 +61,8 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
   private NetworkTableEntry gyroHeading;
+  private NetworkTableEntry flywheelSpeedSlider;
+  private double flywheelSpeed;
 
   private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
   // 42 counts per revolution for the encoders
@@ -67,18 +72,26 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     //SmartDashboard.putData("Auto choices", m_chooser);
-    dataTab.add(m_chooser);
-
-
-    rightMotor1.setInverted(true);
-    driveTrain = new DifferentialDrive(leftMotors, rightMotors);
-
+    dataTab.add(m_chooser).withSize(2, 1);
+    
+    leftMotor1.restoreFactoryDefaults();
+    leftMotor2.restoreFactoryDefaults();
+    rightMotor1.restoreFactoryDefaults();
+    rightMotor2.restoreFactoryDefaults();
+    leftIntake.restoreFactoryDefaults();
+    rightIntake.restoreFactoryDefaults();
+    leftFlyheel.configFactoryDefault();
+    rightFlyheel.configFactoryDefault();
+    
     coast();
 
     leftMotor1.setOpenLoopRampRate(driveRampRate);
     leftMotor2.setOpenLoopRampRate(driveRampRate);
     rightMotor1.setOpenLoopRampRate(driveRampRate);
     rightMotor2.setOpenLoopRampRate(driveRampRate);
+    
+    rightMotors.setInverted(true);
+    driveTrain = new DifferentialDrive(leftMotors, rightMotors);
 
     leftEncoder1 = leftMotor1.getEncoder();
     leftEncoder2 = leftMotor2.getEncoder();
@@ -91,12 +104,14 @@ public class Robot extends TimedRobot {
     rightEncoder2.setPositionConversionFactor(DISTANCE_PER_ROTATION);
 
     rightIntake.setInverted(true);
+    rightIntake.setIdleMode(IdleMode.kCoast);
+    leftIntake.setIdleMode(IdleMode.kCoast);
     
     rightFlyheel.setInverted(true);
     // flywheelMotors.register(rightFlyheel);
     // flywheelMotors.register(leftFlyheel);
-    leftFlyheel.setNeutralMode(NeutralMode.Brake);
-    rightFlyheel.setNeutralMode(NeutralMode.Brake);
+    leftFlyheel.setNeutralMode(NeutralMode.Coast);
+    rightFlyheel.setNeutralMode(NeutralMode.Coast);
     rightFlyheel.follow(leftFlyheel);
 
 
@@ -104,7 +119,12 @@ public class Robot extends TimedRobot {
 
     leftEncoderPos = dataTab.add("Left Encoders", 0).getEntry();
     rightEncoderPos = dataTab.add("Right Encoders", 0).getEntry();
-    gyroHeading = dataTab.add("Gyro Heading", 0).getEntry();
+    gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
+
+    flywheelSpeedSlider = dataTab.add("Flywheel Speed", .5)
+    .withWidget(BuiltInWidgets.kNumberSlider)
+    .withProperties(Map.of("min", 0, "max", 1))
+    .getEntry();
 
 
   }
@@ -115,6 +135,7 @@ public class Robot extends TimedRobot {
     leftEncoderPos.setDouble((leftEncoder1.getPosition() + leftEncoder2.getPosition())/2);
     rightEncoderPos.setDouble((rightEncoder1.getPosition() + rightEncoder2.getPosition())/2);
     gyroHeading.setDouble(gyro.getYaw());
+    flywheelSpeed = flywheelSpeedSlider.getDouble(0);
   }
 
   /**
@@ -157,7 +178,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    driveTrain.arcadeDrive(xboxController.getLeftY(), xboxController.getRightX());
+    driveTrain.arcadeDrive(xboxController.getLeftY(), -xboxController.getRightX());
     if (xboxController.getLeftBumper()) {
       intakeMotors.set(1);
     }
@@ -166,7 +187,7 @@ public class Robot extends TimedRobot {
     };
 
     if (xboxController.getXButton()) {
-      leftFlyheel.set(ControlMode.PercentOutput, .3);
+      leftFlyheel.set(ControlMode.PercentOutput, flywheelSpeed);
     }
     else{
       leftFlyheel.set(ControlMode.PercentOutput, 0);
@@ -196,9 +217,9 @@ public class Robot extends TimedRobot {
 
   public void brake() {
     leftMotor1.setIdleMode(IdleMode.kBrake);
-    leftMotor2.setIdleMode(IdleMode.kBrake);
+    leftMotor2.setIdleMode(IdleMode.kCoast);
     rightMotor1.setIdleMode(IdleMode.kBrake);
-    rightMotor2.setIdleMode(IdleMode.kBrake);
+    rightMotor2.setIdleMode(IdleMode.kCoast);
   }
 
   public void coast() {
