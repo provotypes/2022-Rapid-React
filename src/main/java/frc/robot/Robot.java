@@ -46,8 +46,8 @@ public class Robot extends TimedRobot {
   private final CANSparkMax rightIntake = new CANSparkMax(8, MotorType.kBrushed);
   private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
 
-  private final TalonFX leftFlyheel = new TalonFX(9);
-  private final TalonFX rightFlyheel = new TalonFX(10);
+  private final TalonFX leftFlywheel = new TalonFX(9);
+  private final TalonFX rightFlywheel = new TalonFX(10);
   //private GroupMotorControllers flywheelMotors;
 
   private final XboxController xboxController = new XboxController(0);
@@ -80,8 +80,8 @@ public class Robot extends TimedRobot {
     rightMotor2.restoreFactoryDefaults();
     leftIntake.restoreFactoryDefaults();
     rightIntake.restoreFactoryDefaults();
-    leftFlyheel.configFactoryDefault();
-    rightFlyheel.configFactoryDefault();
+    leftFlywheel.configFactoryDefault();
+    rightFlywheel.configFactoryDefault();
     
     coast();
 
@@ -107,12 +107,12 @@ public class Robot extends TimedRobot {
     rightIntake.setIdleMode(IdleMode.kCoast);
     leftIntake.setIdleMode(IdleMode.kCoast);
     
-    rightFlyheel.setInverted(true);
+    rightFlywheel.setInverted(true);
     // flywheelMotors.register(rightFlyheel);
     // flywheelMotors.register(leftFlyheel);
-    leftFlyheel.setNeutralMode(NeutralMode.Coast);
-    rightFlyheel.setNeutralMode(NeutralMode.Coast);
-    rightFlyheel.follow(leftFlyheel);
+    leftFlywheel.setNeutralMode(NeutralMode.Coast);
+    rightFlywheel.setNeutralMode(NeutralMode.Coast);
+    rightFlywheel.follow(leftFlywheel);
 
 
     Shuffleboard.selectTab("Data");
@@ -187,10 +187,10 @@ public class Robot extends TimedRobot {
     };
 
     if (xboxController.getXButton()) {
-      leftFlyheel.set(ControlMode.PercentOutput, flywheelSpeed);
+      leftFlywheel.set(TalonFXControlMode.PercentOutput, flywheelSpeed);
     }
     else{
-      leftFlyheel.set(ControlMode.PercentOutput, 0);
+      leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);
     }
 
   }
