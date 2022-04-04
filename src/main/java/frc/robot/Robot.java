@@ -28,8 +28,8 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.AnalogOutput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 
 public class Robot extends TimedRobot {
   private static final String kDefaultAuto = "Default";
@@ -74,6 +74,7 @@ public class Robot extends TimedRobot {
   private LedStrip lightStrip;
   // private double voltage;
   private NetworkTableEntry voltage;
+//  private PowerDistribution PDP = new PowerDistribution();
   
   private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
   // 42 counts per revolution for the encoders
@@ -85,7 +86,7 @@ public class Robot extends TimedRobot {
     //SmartDashboard.putData("Auto choices", m_chooser);
     dataTab.add(m_chooser).withSize(2, 1);
 
-    camera = CameraServer.startAutomaticCapture();
+    //camera = CameraServer.startAutomaticCapture();
     
     leftMotor1.restoreFactoryDefaults();
     leftMotor2.restoreFactoryDefaults();
@@ -119,6 +120,7 @@ public class Robot extends TimedRobot {
     rightEncoder2.setPositionConversionFactor(DISTANCE_PER_ROTATION);
 
     rightIntake.setInverted(true);
+    leftIntake.setInverted(true);
     rightIntake.setIdleMode(IdleMode.kCoast);
     leftIntake.setIdleMode(IdleMode.kCoast);
     
@@ -140,9 +142,10 @@ public class Robot extends TimedRobot {
     rightEncoderPos = dataTab.add("Right Encoders", 0).getEntry();
     gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
     voltage = dataTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
+    //NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
     //TODO
     //dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
-    dataTab.add(camera);
+    //dataTab.add(camera);
 
     flywheelSpeedSlider = dataTab.add("Flywheel Speed", .5)
     .withWidget(BuiltInWidgets.kNumberSlider)
@@ -211,28 +214,31 @@ public class Robot extends TimedRobot {
     }
     else {
       intakeMotors.set(0);
-    };
+    }
+
+    // if (xboxController.getRightBumper()) {
+    //   rightIntake.set(1);
+    // }
+    // else {
+    //   rightIntake.set(0);
+    // }
 
     if (xboxController.getXButton()) {
       leftFlywheel.set(TalonFXControlMode.PercentOutput, flywheelSpeed);
     }
     else {
       leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);
-    };
+    }
 
     if (xboxController.getBButton()) {
-      leftClimber.set(TalonFXControlMode.PercentOutput, 3);
+      leftClimber.set(TalonFXControlMode.PercentOutput, -.50);
+    }
+    else if (xboxController.getAButton()) {
+      leftClimber.set(TalonFXControlMode.PercentOutput, .50);
     }
     else {
       leftClimber.set(TalonFXControlMode.PercentOutput, 0);
     };
-
-    if (xboxController.getAButton()) {
-      leftClimber.set(TalonFXControlMode.PercentOutput, -3);
-    }
-    else {
-      leftClimber.set(TalonFXControlMode.PercentOutput, 0);
-    }
 
   }
 
