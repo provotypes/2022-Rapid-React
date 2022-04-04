@@ -25,9 +25,11 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.ComplexWidget;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import frc.robot.LedStrip.ColorChoices;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 
@@ -65,6 +67,7 @@ public class Robot extends TimedRobot {
   private AHRS gyro = new AHRS();
 
   private ShuffleboardTab dataTab = Shuffleboard.getTab("Data");
+  private ShuffleboardTab LEDTab = Shuffleboard.getTab("LEDs");
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
   private NetworkTableEntry gyroHeading;
@@ -74,6 +77,10 @@ public class Robot extends TimedRobot {
   private LedStrip lightStrip;
   // private double voltage;
   private NetworkTableEntry voltage;
+  private NetworkTableEntry lightMode;
+  private final SendableChooser<ColorChoices> colorChoicer = new SendableChooser<>();
+  private ComplexWidget colorChoosereee;
+  private boolean lastChoice;
 //  private PowerDistribution PDP = new PowerDistribution();
   
   private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
@@ -141,7 +148,23 @@ public class Robot extends TimedRobot {
     leftEncoderPos = dataTab.add("Left Encoders", 0).getEntry();
     rightEncoderPos = dataTab.add("Right Encoders", 0).getEntry();
     gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
-    voltage = dataTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
+    lightMode = LEDTab.add("LED Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).getEntry();
+    voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
+    boolean firstTry = true;
+    for (ColorChoices choice: ColorChoices.values()) {
+      if (firstTry) {
+        colorChoicer.setDefaultOption(choice.toString(), choice);
+        firstTry = false;
+      }
+      else {
+        colorChoicer.addOption(choice.toString(), choice);
+
+      }
+    }
+    colorChoosereee = LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser);
+
+    lastChoice = lightMode.getBoolean(true);
+
     //NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
     //TODO
     //dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
@@ -165,7 +188,25 @@ public class Robot extends TimedRobot {
     rightEncoderPos.setDouble((rightEncoder1.getPosition() + rightEncoder2.getPosition())/2);
     gyroHeading.setDouble(gyro.getYaw());
     flywheelSpeed = flywheelSpeedSlider.getDouble(0);
-    lightStrip.displayColor(voltage.getDouble(0));
+    if (lastChoice != lightMode.getBoolean(true)) {
+      if (lightMode.getBoolean(true)) {
+        //voltage.delete();
+        //LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser);
+      }
+      else {
+        //colorChoicer.close();
+        //voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
+      }
+    }
+    if (lightMode.getBoolean(true)) {
+      lightStrip.displayColor(colorChoicer.getSelected());
+    }
+    else {
+      lightStrip.displayColor(voltage.getDouble(0));
+      
+    }
+
+    lastChoice = lightMode.getBoolean(true);
   }
 
   /**

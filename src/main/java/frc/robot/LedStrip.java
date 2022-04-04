@@ -9,15 +9,19 @@ public class LedStrip {
     private final int NUM_ROBORIO_ONBOARD_DIGIO_PINS = 10;
     private final int NUM_ROBORIO_ONBOARD_PWM_PINS = 10;
     private final int NUM_ROBORIO_ONBOARD_ANALOGIN_PINS = 4;
-    private AnalogOutput lightStrip;
+    private AnalogOutput strip;
     
     public LedStrip(int analogPort) {
-        lightStrip = new AnalogOutput(getChannelFromPin(PinType.AnalogOut, 0));
+        this.strip = new AnalogOutput(getChannelFromPin(PinType.AnalogOut, 0));
     }
 
     private enum PinType {
         DigitalIO, PWM, AnalogIn, AnalogOut
     };
+
+    public enum ColorChoices {
+        GreenStrobe, YellowStrobe, RedStrobe, BlueStrobe, GreenFlash, RedFlash, BlueFlash, YellowFlash, GreenSolid, RedSolid, BlueSolid, YellowSolid, BlueGreenStrobe, RedBlueStrobe, RedGreenStrobe, White
+    }
 
     private int getChannelFromPin(PinType type, int io_pin_number) throws IllegalArgumentException {
         int roborio_channel = 0;
@@ -54,9 +58,54 @@ public class LedStrip {
     }
 
     public void displayColor (double voltage) {
-        lightStrip.setVoltage(voltage);
+        this.strip.setVoltage(voltage);
     }
 
+    public void displayColor (ColorChoices color) {
+        this.strip.setVoltage(findVoltage(color));
+    }
+
+    public double findVoltage (ColorChoices color) {
+        switch (color) {
+            case GreenStrobe:
+            default:{
+                return 0;}
+            case RedStrobe:{
+                return .2;}
+            case BlueStrobe:
+                return .35;
+            case YellowStrobe:{
+                return .5;}
+            case GreenFlash:{
+                return .6;}
+            case RedFlash:{
+                return .7;}
+            case BlueFlash:{
+                return .8;}
+            case YellowFlash:{
+                return .91;}
+            case GreenSolid:{
+                return 1.1;}
+            case RedSolid:{
+                return 1.2;}
+            case BlueSolid:{
+                return 1.3;}
+            case YellowSolid:{
+                return 1.4;}
+            case BlueGreenStrobe:{
+                return 1.7;}
+            case RedBlueStrobe:{
+                return 2;}
+            case RedGreenStrobe:{
+                return 2.2;}
+            case White:{
+                return 2.4;}
+
+                
+
+
+        }
+    }
 
     
 }
