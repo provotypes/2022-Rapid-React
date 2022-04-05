@@ -20,7 +20,7 @@ public class LedStrip {
     };
 
     public enum ColorChoices {
-        GreenStrobe, YellowStrobe, RedStrobe, BlueStrobe, GreenFlash, RedFlash, BlueFlash, YellowFlash, GreenSolid, RedSolid, BlueSolid, YellowSolid, BlueGreenStrobe, RedBlueStrobe, RedGreenStrobe, White
+        GreenStrobe, YellowStrobe, RedStrobe, BlueStrobe, GreenFlash, RedFlash, BlueFlash, YellowFlash, GreenSolid, RedSolid, BlueSolid, YellowSolid, BlueGreenStrobe, RedBlueStrobe, RedGreenStrobe, White, Off
     }
 
     private int getChannelFromPin(PinType type, int io_pin_number) throws IllegalArgumentException {
@@ -100,6 +100,8 @@ public class LedStrip {
                 return 2.2;}
             case White:{
                 return 2.4;}
+            case Off:{
+                return 5;}
 
                 
 
