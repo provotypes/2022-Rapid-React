@@ -10,7 +10,7 @@ import java.util.Map;
 //import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -52,12 +52,12 @@ public class Robot extends TimedRobot {
   private final CANSparkMax rightIntake = new CANSparkMax(8, MotorType.kBrushed);
   private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
 
-  private final TalonFX leftFlywheel = new TalonFX(9);
-  private final TalonFX rightFlywheel = new TalonFX(10);
-  //private GroupMotorControllers flywheelMotors;
+  private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
+  private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
+  private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
 
-  private final TalonFX leftClimber = new TalonFX(11);
-  private final TalonFX rightClimber = new TalonFX(12);
+  private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
+  private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
 
   private final XboxController xboxController = new XboxController(0);
   private RelativeEncoder leftEncoder1;
@@ -132,11 +132,9 @@ public class Robot extends TimedRobot {
     leftIntake.setIdleMode(IdleMode.kCoast);
     
     rightFlywheel.setInverted(true);
-    // flywheelMotors.register(rightFlyheel);
-    // flywheelMotors.register(leftFlyheel);
     leftFlywheel.setNeutralMode(NeutralMode.Coast);
     rightFlywheel.setNeutralMode(NeutralMode.Coast);
-    rightFlywheel.follow(leftFlywheel);
+    //rightFlywheel.follow(leftFlywheel);
 
     rightClimber.setInverted(true);
     leftClimber.setNeutralMode(NeutralMode.Brake);
@@ -266,10 +264,10 @@ public class Robot extends TimedRobot {
     // }
 
     if (xboxController.getXButton()) {
-      leftFlywheel.set(TalonFXControlMode.PercentOutput, flywheelSpeed);
+      flywheelMotors.set(flywheelSpeed);
     }
     else {
-      leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);
+      flywheelMotors.set(0);
     }
 
     if (xboxController.getBButton()) {
