@@ -188,7 +188,8 @@ public class Robot extends TimedRobot {
     rightEncoderPos.setDouble((rightEncoder1.getPosition() + rightEncoder2.getPosition())/2);
     gyroHeading.setDouble(gyro.getYaw());
     flywheelSpeed = flywheelSpeedSlider.getDouble(0);
-    if (lastChoice != lightMode.getBoolean(true)) {
+    //TODO
+    /*if (lastChoice != lightMode.getBoolean(true)) {
       if (lightMode.getBoolean(true)) {
         //voltage.delete();
         //LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser);
@@ -197,7 +198,7 @@ public class Robot extends TimedRobot {
         //colorChoicer.close();
         //voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
       }
-    }
+    }*/
     if (lightMode.getBoolean(true)) {
       lightStrip.displayColor(colorChoicer.getSelected());
     }
