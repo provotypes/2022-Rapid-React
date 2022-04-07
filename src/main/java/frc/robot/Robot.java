@@ -4,12 +4,14 @@
 
 package frc.robot;
 
+import java.util.List;
 import java.util.Map;
 
 //import com.ctre.phoenix.motorcontrol.ControlMode;
 //import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
@@ -34,9 +36,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
-  private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   
   private DifferentialDrive driveTrain;
@@ -48,9 +47,10 @@ public class Robot extends TimedRobot {
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(rightMotor1, rightMotor2);
   private double driveRampRate = 0.5;
 
-  private final CANSparkMax leftIntake = new CANSparkMax(7, MotorType.kBrushed);
-  private final CANSparkMax rightIntake = new CANSparkMax(8, MotorType.kBrushed);
+  private final WPI_VictorSPX leftIntake = new WPI_VictorSPX(7);
+  private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
   private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
+  private final CANSparkMax intakeActuator = new CANSparkMax(5, MotorType.kBrushed);
 
   private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
   private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
@@ -64,13 +64,13 @@ public class Robot extends TimedRobot {
   private RelativeEncoder leftEncoder2;
   private RelativeEncoder rightEncoder1;
   private RelativeEncoder rightEncoder2;
+  private List<RelativeEncoder> encoders;
   private AHRS gyro = new AHRS();
 
   private ShuffleboardTab dataTab = Shuffleboard.getTab("Data");
   private ShuffleboardTab LEDTab = Shuffleboard.getTab("LEDs");
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
-  private NetworkTableEntry gyroHeading;
   private NetworkTableEntry flywheelSpeedSlider;
   private double flywheelSpeed;
   private UsbCamera camera;
@@ -81,15 +81,23 @@ public class Robot extends TimedRobot {
   private final SendableChooser<ColorChoices> colorChoicer = new SendableChooser<>();
   private ComplexWidget colorChoosereee;
   private boolean lastChoice;
-//  private PowerDistribution PDP = new PowerDistribution();
+  private NetworkTableEntry intakeActuatorGraph;
+  private PowerDistribution PDP = new PowerDistribution();
+
+  private Auto autonomous;
   
   private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
   // 42 counts per revolution for the encoders
 
   @Override
   public void robotInit() {
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
+    m_chooser.setDefaultOption("Default Auto", "no task");
+    m_chooser.addOption("Task 1-A", "task 1-A");
+    m_chooser.addOption("Task 1-B", "task 1-B");
+    m_chooser.addOption("Task 2-A", "task 2-A");
+    m_chooser.addOption("Task 1-A", "task 1-A");
+    m_chooser.addOption("Square Task", "square task");
+    m_chooser.addOption("Test Task", "test task");
     //SmartDashboard.putData("Auto choices", m_chooser);
     dataTab.add(m_chooser).withSize(2, 1);
 
@@ -99,8 +107,9 @@ public class Robot extends TimedRobot {
     leftMotor2.restoreFactoryDefaults();
     rightMotor1.restoreFactoryDefaults();
     rightMotor2.restoreFactoryDefaults();
-    leftIntake.restoreFactoryDefaults();
-    rightIntake.restoreFactoryDefaults();
+    leftIntake.configFactoryDefault();
+    rightIntake.configFactoryDefault();
+    intakeActuator.restoreFactoryDefaults();
     leftFlywheel.configFactoryDefault();
     rightFlywheel.configFactoryDefault();
     leftClimber.configFactoryDefault();
@@ -112,6 +121,11 @@ public class Robot extends TimedRobot {
     leftMotor2.setOpenLoopRampRate(driveRampRate);
     rightMotor1.setOpenLoopRampRate(driveRampRate);
     rightMotor2.setOpenLoopRampRate(driveRampRate);
+    //TODO
+    leftMotor1.setSmartCurrentLimit(0, 12, 0);
+    leftMotor2.setSmartCurrentLimit(0, 12, 0);
+    rightMotor1.setSmartCurrentLimit(0, 12, 0);
+    rightMotor2.setSmartCurrentLimit(0, 12, 0);
     
     rightMotors.setInverted(true);
     driveTrain = new DifferentialDrive(leftMotors, rightMotors);
@@ -126,10 +140,11 @@ public class Robot extends TimedRobot {
     rightEncoder1.setPositionConversionFactor(DISTANCE_PER_ROTATION);
     rightEncoder2.setPositionConversionFactor(DISTANCE_PER_ROTATION);
 
-    rightIntake.setInverted(true);
-    leftIntake.setInverted(true);
-    rightIntake.setIdleMode(IdleMode.kCoast);
-    leftIntake.setIdleMode(IdleMode.kCoast);
+    rightIntake.setInverted(false);
+    leftIntake.setInverted(false);
+    rightIntake.setNeutralMode(NeutralMode.Coast);
+    leftIntake.setNeutralMode(NeutralMode.Coast);
+    intakeActuator.setIdleMode(IdleMode.kBrake); 
     
     rightFlywheel.setInverted(true);
     leftFlywheel.setNeutralMode(NeutralMode.Coast);
@@ -145,9 +160,10 @@ public class Robot extends TimedRobot {
 
     leftEncoderPos = dataTab.add("Left Encoders", 0).getEntry();
     rightEncoderPos = dataTab.add("Right Encoders", 0).getEntry();
-    gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
-    lightMode = LEDTab.add("LED Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).getEntry();
-    voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
+    // gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
+    dataTab.add(gyro).withWidget(BuiltInWidgets.kGyro);
+    lightMode = LEDTab.add("LED Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).withPosition(3, 1).getEntry();
+    voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 5)).withPosition(1, 1).getEntry();
     boolean firstTry = true;
     for (ColorChoices choice: ColorChoices.values()) {
       if (firstTry) {
@@ -159,11 +175,14 @@ public class Robot extends TimedRobot {
 
       }
     }
-    colorChoosereee = LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser);
+    colorChoosereee = LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser).withPosition(4, 1);
 
     lastChoice = lightMode.getBoolean(true);
 
+    intakeActuatorGraph = dataTab.add("Intake Actuator Voltage", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
+
     //NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
+    //dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
     //TODO
     //dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
     //dataTab.add(camera);
@@ -177,6 +196,16 @@ public class Robot extends TimedRobot {
 
     lightStrip = new LedStrip(0);
 
+    leftMotor1.burnFlash();
+    leftMotor2.burnFlash();
+    rightMotor1.burnFlash();
+    rightMotor2.burnFlash();
+    intakeActuator.burnFlash();
+
+    Playlist.load();
+
+    encoders = List.of(leftEncoder1, leftEncoder2, rightEncoder1, rightEncoder1);
+
   }
 
 
@@ -184,7 +213,8 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     leftEncoderPos.setDouble((leftEncoder1.getPosition() + leftEncoder2.getPosition())/2);
     rightEncoderPos.setDouble((rightEncoder1.getPosition() + rightEncoder2.getPosition())/2);
-    gyroHeading.setDouble(gyro.getYaw());
+    //gyroHeading.setDouble(gyro.getYaw());
+    intakeActuatorGraph.setDouble(intakeActuator.getAppliedOutput());
     flywheelSpeed = flywheelSpeedSlider.getDouble(0);
     //TODO
     /*if (lastChoice != lightMode.getBoolean(true)) {
@@ -204,8 +234,11 @@ public class Robot extends TimedRobot {
       lightStrip.displayColor(voltage.getDouble(0));
       
     }
+    //lightStrip.displayColor(() -> {if (lightMode.getBoolean(true)){colorChoicer.getSelected();} else {voltage.getDouble(0);}});
 
     lastChoice = lightMode.getBoolean(true);
+
+    Playlist.update();
   }
 
   /**
@@ -221,22 +254,38 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     brake();
-    m_autoSelected = m_chooser.getSelected();
+    autonomous = new Auto(driveTrain, gyro, encoders);
+    task = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
+    System.out.println("Auto selected: " + task);
   }
 
 
+  String task = "None";
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
+    switch (task) {
+      case "task 1-A": {
+        autonomous.task_1a();
         break;
-      case kDefaultAuto:
-      default:
-        // Put default auto code here
+      }
+      case "task 1-B": {
         break;
+      }
+      case "task 2-A": {
+        break;
+      }
+      case "task 2-B": {
+        break;
+      }
+      case "square task": {
+        autonomous.square_task();
+        break;
+      }
+      case "test task": {
+        break;
+      }
+      default: {} // leave empty
     }
   }
 
@@ -271,14 +320,29 @@ public class Robot extends TimedRobot {
     }
 
     if (xboxController.getBButton()) {
-      leftClimber.set(TalonFXControlMode.PercentOutput, -.50);
+      leftClimber.set(TalonFXControlMode.PercentOutput, -.75);
     }
     else if (xboxController.getAButton()) {
-      leftClimber.set(TalonFXControlMode.PercentOutput, .50);
+      leftClimber.set(TalonFXControlMode.PercentOutput, .75);
     }
     else {
       leftClimber.set(TalonFXControlMode.PercentOutput, 0);
     };
+
+    if (xboxController.getStartButtonPressed()) {
+      leftClimber.overrideLimitSwitchesEnable(true);
+      rightClimber.overrideLimitSwitchesEnable(true);
+    }
+
+    if (xboxController.getPOV() == 0) {
+      intakeActuator.set(.75);      
+    }
+    else if (xboxController.getPOV() == 180) {
+      intakeActuator.set(-.75);
+    }
+    else {
+      intakeActuator.set(0);
+    }
 
   }
 

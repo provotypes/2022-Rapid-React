@@ -66,6 +66,8 @@ dependencies {
     simulationRelease wpi.sim.enableRelease()
 
     testImplementation 'junit:junit:4.13.1'
+
+    implementation 'com.google.code.gson:gson:2.9.0'
 }
 
 // Simulation configuration (e.g. environment variables).
