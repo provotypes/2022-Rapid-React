@@ -21,6 +21,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -46,7 +47,7 @@ public class Robot extends TimedRobot {
   private final CANSparkMax rightMotor2 = new CANSparkMax(4, MotorType.kBrushless);
   private final MotorControllerGroup leftMotors = new MotorControllerGroup(leftMotor1, leftMotor2);
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(rightMotor1, rightMotor2);
-  private double driveRampRate = 1.25;
+  private double driveRampRate = 0.5;
 
   //private final WPI_VictorSPX leftIntake = new WPI_VictorSPX(7);
   //private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
@@ -75,7 +76,7 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry rightEncoderPos;
   private NetworkTableEntry flywheelSpeedSlider;
   public double flywheelSpeed;
-  private UsbCamera camera;
+  //private UsbCamera camera;
   private LedStrip lightStrip;
   // private double voltage;
   private NetworkTableEntry voltage;
@@ -109,9 +110,8 @@ public class Robot extends TimedRobot {
     //SmartDashboard.putData("Auto choices", m_chooser);
     dataTab.add("Auto Task", m_chooser).withSize(2, 1);
 
-    camera = CameraServer.startAutomaticCapture();
-    camera.setResolution(400, 250);
-    camera.setFPS(24);
+    //camera = CameraServer.startAutomaticCapture();
+    //camera.setResolution(320, 240);
     
     leftMotor1.restoreFactoryDefaults();
     leftMotor2.restoreFactoryDefaults();
@@ -125,7 +125,7 @@ public class Robot extends TimedRobot {
     leftClimber.configFactoryDefault();
     rightClimber.configFactoryDefault();
     
-    intake.getActuator().setIdleMode(IdleMode.kCoast);
+    intake.getActuator().setIdleMode(IdleMode.kBrake);
     intake.getActuator().setOpenLoopRampRate(.4);
 
     leftMotor1.setOpenLoopRampRate(driveRampRate);
@@ -170,6 +170,8 @@ public class Robot extends TimedRobot {
     rightClimber.setNeutralMode(NeutralMode.Brake);
     rightClimber.follow(leftClimber);
 
+    //SlewRateLimiter filter = new SlewRateLimiter(0.5);
+
     //Playlist.setMotors(List.of(rightFlywheel, leftFlywheel, rightClimber, leftClimber));
 
     Shuffleboard.selectTab("Data");
@@ -204,7 +206,7 @@ public class Robot extends TimedRobot {
     //dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
     //TODO
     //dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
-    dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
+    //dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
 
     flywheelSpeedSlider = dataTab.add("Flywheel Speed", .7)
     .withWidget(BuiltInWidgets.kNumberSlider)
@@ -288,7 +290,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    // brake();
+    brake();
     autonomous = new Auto(driveTrain, gyro, encoders);
     task = m_chooser.getSelected();
     
@@ -332,7 +334,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    coast();
+    brake();
   }
 
   double drive_speed = 0.0;
@@ -371,13 +373,13 @@ public class Robot extends TimedRobot {
     //   rightIntake.set(0);
     // }
 
-    if (xboxController.getRightTriggerAxis() > .5) {
+    if (xboxController.getRightTriggerAxis() > .1) {
       // flywheelMotors.set(flywheelSpeed);
       leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
       // leftFlywheel.set(TalonFXControlMode.Velocity, 12500); 
     }
-    else if (xboxController.getLeftTriggerAxis() > .5) {
-      leftFlywheel.set(TalonFXControlMode.PercentOutput, .66);
+    else if (xboxController.getLeftTriggerAxis() > .1) {
+      leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
     }
     else {
       leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);

@@ -4,11 +4,26 @@
       "/FMSInfo": "FMSInfo",
       "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
       "/LiveWindow/Ungrouped/MotorControllerGroup[3]": "Motor Controller",
+      "/LiveWindow/Ungrouped/MotorControllerGroup[4]": "Motor Controller",
+      "/LiveWindow/Ungrouped/PIDController[1]": "PIDController",
+      "/LiveWindow/Ungrouped/Talon FX [10]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX [11]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX [12]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Talon FX [9]": "Motor Controller",
       "/LiveWindow/Ungrouped/navX-Sensor[4]": "Gyro",
-      "/Shuffleboard/Data/SendableChooser[0]": "String Chooser"
+      "/Shuffleboard/Data/Auto Task": "String Chooser",
+      "/Shuffleboard/Data/Gyro Heading": "Gyro",
+      "/Shuffleboard/Data/SendableChooser[0]": "String Chooser",
+      "/Shuffleboard/LEDs/SendableChooser[1]": "String Chooser"
     }
   },
   "NetworkTables": {
+    "CameraPublisher": {
+      "USB Camera 0": {
+        "open": true
+      },
+      "open": true
+    },
     "Shuffleboard": {
       "Data": {
         "open": true

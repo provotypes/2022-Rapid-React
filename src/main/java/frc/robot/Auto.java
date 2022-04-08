@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMax.IdleMode;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -101,10 +102,11 @@ public class Auto {
             }
             case 0: {
                 if (!called) {
+                    intake.getActuator().setIdleMode(IdleMode.kCoast);
                     intake.on();
                     called = true;
                 }
-                boolean reached_position = drive(38, -0.5);
+                boolean reached_position = drive(6*12, -0.5);
                 intake.update();
                 if (reached_position) {
                     task_status++;
@@ -121,12 +123,13 @@ public class Auto {
             }
             case 2: {
 
-                boolean reached_distance = drive(38, 0.5);
+                boolean reached_distance = drive(6*12, 0.5);
                 time++;
 
                 if (time >= 20) {
                     intake.off();
                     intake.update();
+                    intake.getActuator().setIdleMode(IdleMode.kBrake);
                 }
                 if (reached_distance) {
                     task_status++;
@@ -136,16 +139,35 @@ public class Auto {
                 break;
             }
             case 3: {
-                boolean reached_angle = turn(-172);
+                boolean reached_angle = turn(170);
+
+                if (reached_angle) {
+                    task_status++;
+                    time = 0;
+                }
+                break;
+            }
+            case 4: {
+                time++;
+
+                if (time >= 10) {
+                    task_status++;
+                    time = 0;
+                }
+                break;
+            }
+            case 5: {
+                boolean reached_angle = slow_turn(180);
 
                 if (reached_angle) {
                     task_status++;
                     resetEncoders();
                 }
+
                 break;
             }
-            case 4: {
-                boolean reached_distance = drive(48, -0.5);
+            case 6: {
+                boolean reached_distance = drive(3.5*12, -0.5);
 
                 if (reached_distance) {
                     task_status++;
@@ -154,7 +176,7 @@ public class Auto {
                 }
                 break;
             }
-            case 5: {
+            case 7: {
                 time++;
                 shooter.update();
                 if (time >= 100) {
@@ -169,17 +191,24 @@ public class Auto {
 
     public void Auto1Ball() { // TODO: don't forget the breaks!!!
         switch (task_status) {
-
             case -1: {
-                task_status++;
-                time = 0;
-                called = false;
+                if (!called) {
+                    time = 0;
+                    called = true;
+                }
+                time++;
+
+                if (time >= 300) {
+                    task_status++;
+                    called = false;
+                    time = 0;
+                }
                 break;
             }
             case 0: {
                 time++;
                 if (!called) {
-                    shooter.setPower(0.67);
+                    shooter.setPower(0.65);
                     shooter.on();
                     called = true;
                 }
@@ -200,7 +229,7 @@ public class Auto {
                     called = true;
                     resetEncoders();
                 }
-                boolean reached_distance = drive(7*12, 0.5);
+                boolean reached_distance = drive(7.5*12, 0.5);
 
                 if (reached_distance) {
                     task_status++;
@@ -211,6 +240,7 @@ public class Auto {
                 if (!called) {
                     time = 0;
                     called = true;
+                    intake.getActuator().setIdleMode(IdleMode.kCoast);
                     intake.out();
                 }
                 intake.update();
@@ -224,6 +254,17 @@ public class Auto {
                     called = false;
                 }
                 break; 
+            }
+            case 3: {
+                time++;
+
+                if (time >= 10) {
+                    time = 0;
+                    task_status++;
+                    intake.getActuator().setIdleMode(IdleMode.kBrake);
+                    resetEncoders();
+                }
+                break;
             }
         }
     }
@@ -509,7 +550,7 @@ public class Auto {
             }
         }
 
-        if (_angle <= (-angle) + 7 && _angle >= (-angle) - 7) {
+        if (_angle <= (-angle) + 6 && _angle >= (-angle) - 6) {
 
             return true;
         }
@@ -546,19 +587,19 @@ public class Auto {
             angle += 360.0;
         }
         } else if (angle > 180.0) {
-        while (angle > 180.0) {
-            angle -= 360.0;
-        }
+            while (angle > 180.0) {
+                angle -= 360.0;
+            }
         }
 
-        if (_angle <= (-angle) + 0.35 && _angle >= (-angle) - 0.35) {
-        return true;
+        if (_angle <= (-angle) + 4 && _angle >= (-angle) - 4) {
+            return true;
         }
 
         if (!turnControllerEnabled) {
-        turnController.setSetpoint(kTargetAngleDegrees);
-        rotateToAngleRate = 0; // This value will be updated by the PID Controller
-        turnControllerEnabled = true;
+            turnController.setSetpoint(kTargetAngleDegrees);
+            rotateToAngleRate = 0; // This value will be updated by the PID Controller
+            turnControllerEnabled = true;
         }
         rotateToAngleRate = (turnController.calculate(gyro.getAngle() + angle));
 
