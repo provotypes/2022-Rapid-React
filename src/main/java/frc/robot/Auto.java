@@ -40,6 +40,10 @@ public class Auto {
     private RelativeEncoder leftEncoder2;
     private RelativeEncoder rightEncoder1;
     private RelativeEncoder rightEncoder2;
+
+    static final double kP = 0.03;
+    static final double kI = 0.00;
+    static final double kD = 0.00;
     
     public Auto(DifferentialDrive drivetrain, AHRS gyro, List<RelativeEncoder> encoders) {
         driveTrain = drivetrain;
@@ -48,6 +52,7 @@ public class Auto {
         leftEncoder2 = encoders.get(1);
         rightEncoder1 = encoders.get(2);
         rightEncoder2 = encoders.get(3);
+        turnController = new PIDController(kP, kI, kD);
     }
 
 
@@ -66,6 +71,162 @@ public class Auto {
         return Math.abs(((rightEncoder1.getPosition() + rightEncoder2.getPosition()) / 2.0d));
       }
 
+
+    public void setStatus(int v) {
+        task_status = v;
+    }
+
+    private boolean called = false;
+    public void Auto2Ball() {
+        switch (task_status) {
+            case -1: {
+                if (!called) {
+                    time = 0;
+                    called = true;
+                    intake.out();
+                    
+                    gyro.zeroYaw();
+                }
+                intake.update();
+                intake.getActuator().set(-0.5);
+                time++;
+                if (time >= 30) {
+                    task_status++;
+                    intake.getActuator().set(0);
+                    resetEncoders();
+                    time = 0;
+                    called = false;
+                }
+                break; 
+            }
+            case 0: {
+                if (!called) {
+                    intake.on();
+                    called = true;
+                }
+                boolean reached_position = drive(38, -0.5);
+                intake.update();
+                if (reached_position) {
+                    task_status++;
+                    resetEncoders();
+                    // intake.off();
+                    time = 0;
+                    intake.update();
+                }
+                break;
+            }
+            case 1: {
+                task_status++;
+                break;
+            }
+            case 2: {
+
+                boolean reached_distance = drive(38, 0.5);
+                time++;
+
+                if (time >= 20) {
+                    intake.off();
+                    intake.update();
+                }
+                if (reached_distance) {
+                    task_status++;
+                    resetEncoders();
+                    gyro.zeroYaw();
+                }
+                break;
+            }
+            case 3: {
+                boolean reached_angle = turn(-172);
+
+                if (reached_angle) {
+                    task_status++;
+                    resetEncoders();
+                }
+                break;
+            }
+            case 4: {
+                boolean reached_distance = drive(48, -0.5);
+
+                if (reached_distance) {
+                    task_status++;
+                    shooter.on();
+                    shooter.update();
+                }
+                break;
+            }
+            case 5: {
+                time++;
+                shooter.update();
+                if (time >= 100) {
+                    shooter.off();
+                    shooter.update();
+                    task_status++;
+                }
+            }
+            // add backup off tarmac here
+        }
+    }
+
+    public void Auto1Ball() { // TODO: don't forget the breaks!!!
+        switch (task_status) {
+
+            case -1: {
+                task_status++;
+                time = 0;
+                called = false;
+                break;
+            }
+            case 0: {
+                time++;
+                if (!called) {
+                    shooter.setPower(0.67);
+                    shooter.on();
+                    called = true;
+                }
+                shooter.update();
+
+                if (time >= 150) {
+                    time = 0;
+                    task_status++;
+                    shooter.off();
+                    shooter.update();
+                    resetEncoders();
+                    called = false;
+                }
+                break;
+            }
+            case 1: {
+                if (!called) {
+                    called = true;
+                    resetEncoders();
+                }
+                boolean reached_distance = drive(7*12, 0.5);
+
+                if (reached_distance) {
+                    task_status++;
+                }
+                break;
+            }
+            case 2: {
+                if (!called) {
+                    time = 0;
+                    called = true;
+                    intake.out();
+                }
+                intake.update();
+                intake.getActuator().set(-0.5);
+                time++;
+                if (time >= 30) {
+                    task_status++;
+                    intake.getActuator().set(0);
+                    resetEncoders();
+                    time = 0;
+                    called = false;
+                }
+                break; 
+            }
+        }
+    }
 
 
     public void task_1a() {
@@ -360,9 +521,9 @@ public class Auto {
         }
         rotateToAngleRate = (turnController.calculate(gyro.getAngle() + angle));
 
-        rotateToAngleRate *= 15;
-        rotateToAngleRate *= (rotateToAngleRate * rotateToAngleRate) + 5;
-        rotateToAngleRate = (MathUtil.clamp(rotateToAngleRate / 10, -0.35, 0.4));
+        rotateToAngleRate *= 15; // increase scale of power
+        rotateToAngleRate *= (rotateToAngleRate * rotateToAngleRate) + 5; // make difference more gradual
+        rotateToAngleRate = (MathUtil.clamp(rotateToAngleRate / 10, -0.5, 0.5)); // put speed back in speed range
         driveTrain.tankDrive(-rotateToAngleRate, rotateToAngleRate);
         return false;
     }

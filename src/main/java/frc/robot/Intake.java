@@ -16,21 +16,33 @@ public class Intake {
     private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
     private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
     private final CANSparkMax intakeActuator = new CANSparkMax(5, MotorType.kBrushed);
+    
+    
 
     enum IntakeModes {
         intakeOn,
         intakeOff,
         intakeOut,
-        intakeIn
+        intakeIn,
+        intakeReverse
     }
     final Map<IntakeModes, Runnable> intakeModes = Map.ofEntries(
         entry(IntakeModes.intakeOff, this::executeOff),
         entry(IntakeModes.intakeOn, this::executeOn),
         entry(IntakeModes.intakeOut, this::executeOut),
-        entry(IntakeModes.intakeIn, this::executeIn)
+        entry(IntakeModes.intakeIn, this::executeIn),
+        entry(IntakeModes.intakeReverse, this::executeReverse)
     );
 
     private IntakeModes mode = IntakeModes.intakeOff;
+
+    enum IntakeState {
+        In,
+        Out,
+        movingIn,
+        movingOut
+    }
+    private IntakeState state = IntakeState.In;
 
     public static Intake getInstance() {
         if(instance == null) { 
@@ -41,6 +53,18 @@ public class Intake {
 
     public void update() {
         intakeModes.get(mode).run();
+
+        if (state == IntakeState.movingIn) {
+            executeIn();
+
+            // if encoder, state = IntakeState.In;
+        }
+
+        else if (state == IntakeState.movingOut) {
+            executeOut();
+
+            // if encoder state = IntakeState.Out;
+        }
     }
 
     public void off() {
@@ -49,6 +73,10 @@ public class Intake {
 
     public void on() {
         this.mode = IntakeModes.intakeOn;
+    }
+
+    public void reverse() {
+        this.mode = IntakeModes.intakeReverse;
     }
 
     public void out() {
@@ -77,5 +105,14 @@ public class Intake {
     private void executeIn() {
         intakeMotors.set(0);
         intakeActuator.set(-.5);
+    }
+
+    private void executeReverse() {
+        intakeActuator.set(0);
+        intakeMotors.set(-.5);
+    }
+
+    public CANSparkMax getActuator() {
+        return intakeActuator;
     }
 }

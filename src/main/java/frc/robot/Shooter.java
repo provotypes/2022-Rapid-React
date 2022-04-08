@@ -14,6 +14,8 @@ public class Shooter {
     private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
     private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
 
+    private final double defaultPower = 0.7;
+    private double power = 0.7;
 
     enum ShooterModes {
         shooterOn,
@@ -35,8 +37,16 @@ public class Shooter {
             return instance;
     }
 
+    public void setPower(double v) {
+        power = v;
+    }
+
+    public void resetPower() {
+        power = defaultPower;
+    }
+
     private void _on() {
-        flywheelMotors.set(.75);
+        flywheelMotors.set(power);
     }
 
     private void _off() {

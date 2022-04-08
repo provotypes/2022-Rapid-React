@@ -20,16 +20,23 @@ class Playlist {
     private static boolean loop = false;
     private static int playlistPosition = 0;
     private static boolean paused = true;
-    private static WPI_TalonFX motor1 = new WPI_TalonFX(9);
-    private static WPI_TalonFX motor2 = new WPI_TalonFX(10);
-    private static WPI_TalonFX motor4 = new WPI_TalonFX(11);
-    private static WPI_TalonFX motor3 = new WPI_TalonFX(12);
+    private static WPI_TalonFX motor1; // = new WPI_TalonFX(9);
+    private static WPI_TalonFX motor2; // = new WPI_TalonFX(10);
+    private static WPI_TalonFX motor4; // = new WPI_TalonFX(11);
+    private static WPI_TalonFX motor3; // = new WPI_TalonFX(12);
     private static Orchestra musicOrchestra = new Orchestra();
     private static String m_autoSelected;
     private static String previous_selection;
     private static final SendableChooser<String> m_chooser = new SendableChooser<>();
     private static final ShuffleboardTab musicTab = Shuffleboard.getTab("Music");
 
+
+    public static void setMotors(List<WPI_TalonFX> motors) {
+        motor1 = motors.get(0);
+        motor2 = motors.get(1);
+        motor3 = motors.get(2);
+        motor4 = motors.get(3);
+    }
     private static void createOption(String fileName, String displayName) {
         m_chooser.addOption(displayName, fileName);
     }
@@ -90,6 +97,10 @@ class Playlist {
         return shuffled;
     }
 
+    public static boolean isPaused() {
+        return paused;
+    }
+
     public static void shuffle() {
         current_playlist = getShuffled();
         playlistPosition = 0;
@@ -118,7 +129,7 @@ class Playlist {
         boolean playing = musicOrchestra.isPlaying();
         if ((!playing) && (!paused)) {
             System.out.println("Playing next...");
-            playlistPosition++;
+            //playlistPosition++;
             if (playlistPosition >= current_playlist.size()) {
                 playlistPosition = 0;
                 if (loop) { paused = true; }
