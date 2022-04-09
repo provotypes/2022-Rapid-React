@@ -76,7 +76,7 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry rightEncoderPos;
   private NetworkTableEntry flywheelSpeedSlider;
   public double flywheelSpeed;
-  //private UsbCamera camera;
+  // private UsbCamera camera;  //Camera causes robot code to be deleted
   private LedStrip lightStrip;
   // private double voltage;
   private NetworkTableEntry voltage;
@@ -110,8 +110,8 @@ public class Robot extends TimedRobot {
     //SmartDashboard.putData("Auto choices", m_chooser);
     dataTab.add("Auto Task", m_chooser).withSize(2, 1);
 
-    //camera = CameraServer.startAutomaticCapture();
-    //camera.setResolution(320, 240);
+    // camera = CameraServer.startAutomaticCapture();
+    // camera.setResolution(320, 240);
     
     leftMotor1.restoreFactoryDefaults();
     leftMotor2.restoreFactoryDefaults();
@@ -206,7 +206,7 @@ public class Robot extends TimedRobot {
     //dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
     //TODO
     //dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
-    //dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
+    // dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
 
     flywheelSpeedSlider = dataTab.add("Flywheel Speed", .7)
     .withWidget(BuiltInWidgets.kNumberSlider)
@@ -387,10 +387,10 @@ public class Robot extends TimedRobot {
     }
 
     if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//climber down
-      leftClimber.set(TalonFXControlMode.PercentOutput, -.75);
+      leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
     }
     else if (joystick.getRawButton(10) || xboxController.getPOV() == 0) {
-      leftClimber.set(TalonFXControlMode.PercentOutput, .75);
+      leftClimber.set(TalonFXControlMode.PercentOutput, .85);
     }
     else {
       leftClimber.set(TalonFXControlMode.PercentOutput, 0);
