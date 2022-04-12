@@ -1,6 +1,13 @@
 package frc.robot;
 
+import java.util.Map;
+
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.AnalogOutput;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 public class LedStrip {
     private final int MAX_NAVX_MXP_DIGIO_PIN_NUMBER = 9;
@@ -10,9 +17,31 @@ public class LedStrip {
     private final int NUM_ROBORIO_ONBOARD_PWM_PINS = 10;
     private final int NUM_ROBORIO_ONBOARD_ANALOGIN_PINS = 4;
     private AnalogOutput strip;
+
+    private ShuffleboardTab LEDTab = Shuffleboard.getTab("LEDs");
+    private NetworkTableEntry lightMode;
+    private NetworkTableEntry voltage;
+    private final SendableChooser<ColorChoices> colorChoicer = new SendableChooser<>();
+
+
+
     
     public LedStrip(int analogPort) {
         this.strip = new AnalogOutput(getChannelFromPin(PinType.AnalogOut, 0));
+
+        boolean firstTry = true;
+        for (ColorChoices choice: ColorChoices.values()) {
+            if (firstTry) {
+                colorChoicer.setDefaultOption(choice.toString(), choice);
+                firstTry = false;
+            }
+            else {
+                colorChoicer.addOption(choice.toString(), choice);
+            }
+        }
+        LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser).withPosition(4, 1);
+        lightMode = LEDTab.add("LED Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).withPosition(3, 1).getEntry();
+        voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 5)).withPosition(1, 1).getEntry();
     }
 
     private enum PinType {
@@ -109,5 +138,20 @@ public class LedStrip {
         }
     }
 
-    
+    public void checkShuffleboard() {
+
+        if (lightMode.getBoolean(true)) {
+            this.displayColor(colorChoicer.getSelected());
+        }
+        else {
+            this.displayColor(voltage.getDouble(0));
+        }
+
+        // if (lightMode.getBoolean(true)) {
+        //     this.strip.displayColor(colorChoicer.getSelected());
+        // }
+        // else {
+        //     this.strip.displayColor(voltage.getDouble(0));
+        // }
+    }
 }

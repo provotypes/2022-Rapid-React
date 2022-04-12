@@ -71,7 +71,6 @@ public class Robot extends TimedRobot {
   private AHRS gyro = new AHRS();
 
   private ShuffleboardTab dataTab = Shuffleboard.getTab("Data");
-  private ShuffleboardTab LEDTab = Shuffleboard.getTab("LEDs");
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
   private NetworkTableEntry flywheelSpeedSlider;
@@ -79,9 +78,6 @@ public class Robot extends TimedRobot {
   // private UsbCamera camera;  //Camera causes robot code to be deleted
   private LedStrip lightStrip;
   // private double voltage;
-  private NetworkTableEntry voltage;
-  private NetworkTableEntry lightMode;
-  private final SendableChooser<ColorChoices> colorChoicer = new SendableChooser<>();
   private ComplexWidget colorChoosereee;
   private boolean lastChoice;
   private NetworkTableEntry intakeActuatorGraph;
@@ -183,22 +179,6 @@ public class Robot extends TimedRobot {
 
     // gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
     dataTab.add("Gyro Heading", gyro).withWidget(BuiltInWidgets.kGyro);
-    lightMode = LEDTab.add("LED Control Mode", true).withWidget(BuiltInWidgets.kToggleSwitch).withPosition(3, 1).getEntry();
-    voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 5)).withPosition(1, 1).getEntry();
-    boolean firstTry = true;
-    for (ColorChoices choice: ColorChoices.values()) {
-      if (firstTry) {
-        colorChoicer.setDefaultOption(choice.toString(), choice);
-        firstTry = false;
-      }
-      else {
-        colorChoicer.addOption(choice.toString(), choice);
-
-      }
-    }
-    colorChoosereee = LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser).withPosition(4, 1);
-
-    lastChoice = lightMode.getBoolean(true);
 
     intakeActuatorGraph = dataTab.add("Intake Actuator Voltage", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
 
@@ -239,40 +219,21 @@ public class Robot extends TimedRobot {
     intakeActuatorGraph.setDouble(intake.getActuator().getAppliedOutput());
     // intakeActuatorGraph.setDouble(leftFlywheel.getSelectedSensorVelocity());
     flywheelSpeed = flywheelSpeedSlider.getDouble(0);
-    //TODO
-    /*if (lastChoice != lightMode.getBoolean(true)) {
-      if (lightMode.getBoolean(true)) {
-        //voltage.delete();
-        //LEDTab.add(colorChoicer).withSize(2, 1).withWidget(BuiltInWidgets.kComboBoxChooser);
+
+    if (DriverStation.isFMSAttached()) {
+      if (DriverStation.getAlliance()==DriverStation.Alliance.Blue) {
+        defaultColor = ColorChoices.BlueSolid;
+      } 
+      else if (DriverStation.getAlliance() == DriverStation.Alliance.Red) {
+        defaultColor = ColorChoices.RedSolid;
       }
       else {
-        //colorChoicer.close();
-        //voltage = LEDTab.add("LED Voltage", 0).withWidget(BuiltInWidgets.kNumberSlider).withProperties(Map.of("min", 0, "max", 4)).getEntry();
+        defaultColor = ColorChoices.GreenSolid;
       }
-    }*/
-
-    //Shuffleboard Light control
-    if (lightMode.getBoolean(true)) {
-      lightStrip.displayColor(colorChoicer.getSelected());
     }
     else {
-      lightStrip.displayColor(voltage.getDouble(0));
-      
+      defaultColor = ColorChoices.GreenStrobe;
     }
-    //lightStrip.displayColor(() -> {if (lightMode.getBoolean(true)){colorChoicer.getSelected();} else {voltage.getDouble(0);}});
-
-    lastChoice = lightMode.getBoolean(true);
-
-    if (DriverStation.getAlliance()==DriverStation.Alliance.Blue) {
-      defaultColor = ColorChoices.BlueSolid;
-    } 
-    else if (DriverStation.getAlliance() == DriverStation.Alliance.Red) {
-      defaultColor = ColorChoices.RedSolid;
-    }
-    else {
-      defaultColor = ColorChoices.GreenSolid;
-    }
-    //TODO
     //lightStrip.displayColor(defaultColor);
 
     //Playlist.update();
@@ -297,6 +258,8 @@ public class Robot extends TimedRobot {
     autonomous.setStatus(-1);
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + task);
+
+    lightStrip.displayColor(defaultColor);
   }
 
 
@@ -335,6 +298,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     brake();
+    lightStrip.displayColor(defaultColor);
   }
 
   double drive_speed = 0.0;
@@ -421,7 +385,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    lightStrip.checkShuffleboard();
+  }
 
   @Override
   public void testInit() {
