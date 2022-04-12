@@ -11,7 +11,6 @@ import java.util.Map;
 //import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
-import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
@@ -28,7 +27,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import edu.wpi.first.wpilibj.shuffleboard.ComplexWidget;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -41,58 +39,100 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   
   private DifferentialDrive driveTrain;
+
+  ////////////////////////////
+  // ------- Motors ------- //
+  ////////////////////////////
   private final CANSparkMax leftMotor1 = new CANSparkMax(1, MotorType.kBrushless);
   private final CANSparkMax leftMotor2 = new CANSparkMax(2, MotorType.kBrushless);
   private final CANSparkMax rightMotor1 = new CANSparkMax(3, MotorType.kBrushless);
   private final CANSparkMax rightMotor2 = new CANSparkMax(4, MotorType.kBrushless);
   private final MotorControllerGroup leftMotors = new MotorControllerGroup(leftMotor1, leftMotor2);
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(rightMotor1, rightMotor2);
-  private double driveRampRate = 0.5;
+  private final double driveRampRate = 0.5;
 
-  //private final WPI_VictorSPX leftIntake = new WPI_VictorSPX(7);
-  //private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
-  //private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
-  //private final CANSparkMax intakeActuator = new CANSparkMax(5, MotorType.kBrushed);
+  // private final WPI_VictorSPX leftIntake = new WPI_VictorSPX(7);
+  // private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
+  // private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
+  // private final CANSparkMax intakeActuator = new CANSparkMax(5, MotorType.kBrushed);
 
   private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
   private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
-  //private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
+  // private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
 
   private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
   private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
 
+  /////////////////////////////////
+  // ------- Controllers ------- //
+  /////////////////////////////////
+
   private final XboxController xboxController = new XboxController(0);
   private final Joystick joystick = new Joystick(1);
+
+  ////////////////////////////////
+  // ------- Autonomous ------- //
+  ////////////////////////////////
+
+  String task = "None";
+
   private RelativeEncoder leftEncoder1;
   private RelativeEncoder leftEncoder2;
   private RelativeEncoder rightEncoder1;
   private RelativeEncoder rightEncoder2;
   private List<RelativeEncoder> encoders;
-  private AHRS gyro = new AHRS();
+  private final AHRS gyro = new AHRS();
+
+  private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
+  // 42 counts per revolution for the encoders
+
+  private Auto autonomous;
+
+  //////////////////////////////////
+  // ------- Shuffleboard ------- //
+  //////////////////////////////////
 
   private ShuffleboardTab dataTab = Shuffleboard.getTab("Data");
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
+
+  // Flywheels
   private NetworkTableEntry flywheelSpeedSlider;
   public double flywheelSpeed;
-  // private UsbCamera camera;  //Camera causes robot code to be deleted
-  private LedStrip lightStrip;
-  // private double voltage;
-  private ComplexWidget colorChoosereee;
-  private boolean lastChoice;
+
+  private UsbCamera camera;  //Camera causes robot code to be deleted
   private NetworkTableEntry intakeActuatorGraph;
   private PowerDistribution PDP = new PowerDistribution();
+
+  //////////////////////////////////
+  // ------- Dependencies ------- //
+  //////////////////////////////////
 
   private Intake intake = Intake.getInstance();
   private Shooter shooter = Shooter.getInstance();
 
-  private double prev_speed = 0.0;
+  //////////////////////////////
+  // ------- Lighting ------- //
+  //////////////////////////////
+
+  private LedStrip lightStrip;
   private ColorChoices defaultColor;
 
-  private Auto autonomous;
-  
-  private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
-  // 42 counts per revolution for the encoders
+  ///////////////////////////
+  // ------- Music ------- //
+  ///////////////////////////
+
+  private WPI_TalonFX [] musicMotors = {leftFlywheel, rightFlywheel, leftClimber, rightClimber};
+  private Playlist playlist;
+
+  private void ResetSpark(CANSparkMax motor, Double rampRate) {
+    motor.restoreFactoryDefaults();
+    motor.setOpenLoopRampRate(rampRate);
+  }
+
+  private void ResetTalon(WPI_TalonFX motor) {
+    motor.configFactoryDefault();
+  }
 
   @Override
   public void robotInit() {
@@ -103,31 +143,26 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("Task 1-A", "task 1-A");
     m_chooser.addOption("Square Task", "square task");
     m_chooser.addOption("Test Task", "test task");
-    //SmartDashboard.putData("Auto choices", m_chooser);
+    // SmartDashboard.putData("Auto choices", m_chooser);
     dataTab.add("Auto Task", m_chooser).withSize(2, 1);
 
-    // camera = CameraServer.startAutomaticCapture();
-    // camera.setResolution(320, 240);
+    camera = CameraServer.startAutomaticCapture();
+    camera.setResolution(320, 240);
     
-    leftMotor1.restoreFactoryDefaults();
-    leftMotor2.restoreFactoryDefaults();
-    rightMotor1.restoreFactoryDefaults();
-    rightMotor2.restoreFactoryDefaults();
-    //leftIntake.configFactoryDefault();
-    //rightIntake.configFactoryDefault();
-    //intakeActuator.restoreFactoryDefaults();
-    leftFlywheel.configFactoryDefault();
-    rightFlywheel.configFactoryDefault();
-    leftClimber.configFactoryDefault();
-    rightClimber.configFactoryDefault();
+    ResetSpark(leftMotor1, driveRampRate);
+    ResetSpark(leftMotor2, driveRampRate);
+    ResetSpark(rightMotor1, driveRampRate);
+    ResetSpark(rightMotor2, driveRampRate);
+    // leftIntake.configFactoryDefault();
+    // rightIntake.configFactoryDefault();
+    // intakeActuator.restoreFactoryDefaults();
+    ResetTalon(leftFlywheel);
+    ResetTalon(rightFlywheel);
+    ResetTalon(leftClimber);
+    ResetTalon(rightClimber);
     
     intake.getActuator().setIdleMode(IdleMode.kBrake);
     intake.getActuator().setOpenLoopRampRate(.4);
-
-    leftMotor1.setOpenLoopRampRate(driveRampRate);
-    leftMotor2.setOpenLoopRampRate(driveRampRate);
-    rightMotor1.setOpenLoopRampRate(driveRampRate);
-    rightMotor2.setOpenLoopRampRate(driveRampRate);
 
     //TODO
     // leftMotor1.setSmartCurrentLimit(0, 12, 0);
@@ -159,16 +194,14 @@ public class Robot extends TimedRobot {
     rightFlywheel.setInverted(true);
     leftFlywheel.setNeutralMode(NeutralMode.Coast);
     rightFlywheel.setNeutralMode(NeutralMode.Coast);
-    //rightFlywheel.follow(leftFlywheel);
+    // rightFlywheel.follow(leftFlywheel);
 
     rightClimber.setInverted(true);
     leftClimber.setNeutralMode(NeutralMode.Brake);
     rightClimber.setNeutralMode(NeutralMode.Brake);
     rightClimber.follow(leftClimber);
 
-    //SlewRateLimiter filter = new SlewRateLimiter(0.5);
-
-    //Playlist.getInstance().setMotors(List.of(rightFlywheel, leftFlywheel, rightClimber, leftClimber));
+    // SlewRateLimiter filter = new SlewRateLimiter(0.5);
 
     Shuffleboard.selectTab("Data");
 
@@ -182,11 +215,11 @@ public class Robot extends TimedRobot {
 
     intakeActuatorGraph = dataTab.add("Intake Actuator Voltage", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
 
-    //NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
-    //dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
-    //TODO
-    //dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
-    // dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
+    // NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
+    // dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
+    // TODO
+    // dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
+    dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
 
     flywheelSpeedSlider = dataTab.add("Flywheel Speed", .7)
     .withWidget(BuiltInWidgets.kNumberSlider)
@@ -203,7 +236,7 @@ public class Robot extends TimedRobot {
     rightMotor2.burnFlash();
     // intakeActuator.burnFlash();
 
-    //Playlist.getInstance().load();
+    // playlist = new Playlist(musicMotors);
 
     encoders = List.of(leftEncoder1, leftEncoder2, rightEncoder1, rightEncoder1);
 
@@ -236,7 +269,7 @@ public class Robot extends TimedRobot {
     }
     //lightStrip.displayColor(defaultColor);
 
-    //Playlist.getInstance().update();
+    // playlist.update();
   }
 
   /**
@@ -263,7 +296,8 @@ public class Robot extends TimedRobot {
   }
 
 
-  String task = "None";
+
+
   @Override
   public void autonomousPeriodic() {
     // intake.update();
@@ -306,17 +340,8 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     intake.update();
 
-    prev_speed = drive_speed;
     drive_speed = xboxController.getLeftY();
 
-    // if (!(prev_speed - 0.025 < drive_speed && prev_speed + 0.025 > drive_speed)) {
-    //     if (drive_speed < prev_speed && prev_speed > 0) {
-    //         drive_speed = prev_speed - 0.025;
-    //     }
-    //     else if (drive_speed > prev_speed && prev_speed < 0) {
-    //         drive_speed = prev_speed + 0.025;
-    //     }
-    // }
 
     driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.6);
 
@@ -330,12 +355,6 @@ public class Robot extends TimedRobot {
       intake.off();
     }
 
-    // if (xboxController.getRightBumper()) {
-    //   rightIntake.set(1);
-    // }
-    // else {
-    //   rightIntake.set(0);
-    // }
 
     if (xboxController.getRightTriggerAxis() > .1) {
       // flywheelMotors.set(flywheelSpeed);

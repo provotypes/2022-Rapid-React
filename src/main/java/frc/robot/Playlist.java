@@ -9,7 +9,7 @@ import java.util.*;
 import java.io.File;
 import java.io.*;
 import com.google.gson.*;
-
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
 
@@ -20,43 +20,29 @@ class Playlist {
     private boolean loop = false;
     private int playlistPosition = 0;
     private boolean paused = true;
-    private WPI_TalonFX motor1; // = new WPI_TalonFX(9);
-    private WPI_TalonFX motor2; // = new WPI_TalonFX(10);
-    private WPI_TalonFX motor4; // = new WPI_TalonFX(11);
-    private WPI_TalonFX motor3; // = new WPI_TalonFX(12);
-    private Orchestra musicOrchestra = new Orchestra();
+    private ArrayList<TalonFX> talonFXs;
+    private Orchestra musicOrchestra;
     private String m_autoSelected;
     private String previous_selection;
     private final SendableChooser<String> m_chooser = new SendableChooser<>();
     private final ShuffleboardTab musicTab = Shuffleboard.getTab("Music");
 
 
-    private static Playlist singleton;
-    public static Playlist getInstance() {
-        if (singleton == null) {
-            singleton = new Playlist();
+    public Playlist(WPI_TalonFX [] talonFXs) {
+        this.talonFXs = new ArrayList<TalonFX>();
+        for (int i = 0; i < talonFXs.length; i++) {
+            this.talonFXs.add(talonFXs[i]);
         }
-        return singleton;
-    }
-
-
-    public void setMotors(List<WPI_TalonFX> motors) {
-        motor1 = motors.get(0);
-        motor2 = motors.get(1);
-        motor3 = motors.get(2);
-        motor4 = motors.get(3);
+        musicOrchestra = new Orchestra(this.talonFXs);
+        load();
     }
     private void createOption(String fileName, String displayName) {
         m_chooser.addOption(displayName, fileName);
     }
 
     
-    public void load() {
+    private void load() {
         try {
-            musicOrchestra.addInstrument(motor1);
-            musicOrchestra.addInstrument(motor2);
-            musicOrchestra.addInstrument(motor3);
-            musicOrchestra.addInstrument(motor4);
             File file = new File(Filesystem.getDeployDirectory().getPath().concat("/Playlist.json"));
             JsonElement conf = JsonParser.parseReader(new FileReader(file));
             Map<String, String> _music = new HashMap<>();
@@ -91,7 +77,7 @@ class Playlist {
         }
     }
 
-    public List<String> getShuffled() {
+    private List<String> getShuffled() {
         List<String> shuffled = new ArrayList<>();
         List<String> musicCopy = List.copyOf(music);
 

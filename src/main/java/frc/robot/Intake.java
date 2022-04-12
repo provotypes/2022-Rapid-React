@@ -47,7 +47,7 @@ public class Intake {
     public static Intake getInstance() {
         if(instance == null) { 
             instance = new Intake();
-         }
+        }
         return instance;
     }
 

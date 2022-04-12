@@ -45,6 +45,8 @@ public class Auto {
     static final double kP = 0.03;
     static final double kI = 0.00;
     static final double kD = 0.00;
+
+    private boolean called = false;
     
     public Auto(DifferentialDrive drivetrain, AHRS gyro, List<RelativeEncoder> encoders) {
         driveTrain = drivetrain;
@@ -64,20 +66,19 @@ public class Auto {
         rightEncoder2.setPosition(0.0d);
       }
     
-      public double getLeftEncoderDistance() {
-        return Math.abs(((leftEncoder1.getPosition() + leftEncoder2.getPosition()) / 2.0d));
-      }
-    
-      public double getRightEncoderDistance() {
-        return Math.abs(((rightEncoder1.getPosition() + rightEncoder2.getPosition()) / 2.0d));
-      }
+    public double getLeftEncoderDistance() {
+      return Math.abs(((leftEncoder1.getPosition() + leftEncoder2.getPosition()) / 2.0d));
+    }
+
+    public double getRightEncoderDistance() {
+      return Math.abs(((rightEncoder1.getPosition() + rightEncoder2.getPosition()) / 2.0d));
+    }
 
 
     public void setStatus(int v) {
         task_status = v;
     }
 
-    private boolean called = false;
     public void Auto2Ball() {
         switch (task_status) {
             case -1: {
