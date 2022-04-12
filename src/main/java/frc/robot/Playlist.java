@@ -14,35 +14,44 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
 
 class Playlist {
-    private static List<String> music = new ArrayList<>();
-    private static List<String> current_playlist = new ArrayList<>();
-    private static Random r = new Random();
-    private static boolean loop = false;
-    private static int playlistPosition = 0;
-    private static boolean paused = true;
-    private static WPI_TalonFX motor1; // = new WPI_TalonFX(9);
-    private static WPI_TalonFX motor2; // = new WPI_TalonFX(10);
-    private static WPI_TalonFX motor4; // = new WPI_TalonFX(11);
-    private static WPI_TalonFX motor3; // = new WPI_TalonFX(12);
-    private static Orchestra musicOrchestra = new Orchestra();
-    private static String m_autoSelected;
-    private static String previous_selection;
-    private static final SendableChooser<String> m_chooser = new SendableChooser<>();
-    private static final ShuffleboardTab musicTab = Shuffleboard.getTab("Music");
+    private List<String> music = new ArrayList<>();
+    private List<String> current_playlist = new ArrayList<>();
+    private Random r = new Random();
+    private boolean loop = false;
+    private int playlistPosition = 0;
+    private boolean paused = true;
+    private WPI_TalonFX motor1; // = new WPI_TalonFX(9);
+    private WPI_TalonFX motor2; // = new WPI_TalonFX(10);
+    private WPI_TalonFX motor4; // = new WPI_TalonFX(11);
+    private WPI_TalonFX motor3; // = new WPI_TalonFX(12);
+    private Orchestra musicOrchestra = new Orchestra();
+    private String m_autoSelected;
+    private String previous_selection;
+    private final SendableChooser<String> m_chooser = new SendableChooser<>();
+    private final ShuffleboardTab musicTab = Shuffleboard.getTab("Music");
 
 
-    public static void setMotors(List<WPI_TalonFX> motors) {
+    private static Playlist singleton;
+    public static Playlist getInstance() {
+        if (singleton == null) {
+            singleton = new Playlist();
+        }
+        return singleton;
+    }
+
+
+    public void setMotors(List<WPI_TalonFX> motors) {
         motor1 = motors.get(0);
         motor2 = motors.get(1);
         motor3 = motors.get(2);
         motor4 = motors.get(3);
     }
-    private static void createOption(String fileName, String displayName) {
+    private void createOption(String fileName, String displayName) {
         m_chooser.addOption(displayName, fileName);
     }
 
     
-    public static void load() {
+    public void load() {
         try {
             musicOrchestra.addInstrument(motor1);
             musicOrchestra.addInstrument(motor2);
@@ -82,7 +91,7 @@ class Playlist {
         }
     }
 
-    public static List<String> getShuffled() {
+    public List<String> getShuffled() {
         List<String> shuffled = new ArrayList<>();
         List<String> musicCopy = List.copyOf(music);
 
@@ -97,17 +106,17 @@ class Playlist {
         return shuffled;
     }
 
-    public static boolean isPaused() {
+    public boolean isPaused() {
         return paused;
     }
 
-    public static void shuffle() {
+    public void shuffle() {
         current_playlist = getShuffled();
         playlistPosition = 0;
         play(current_playlist.get(playlistPosition));
     }
 
-    public static void update() {
+    public void update() {
 
         previous_selection = m_autoSelected;
         m_autoSelected = m_chooser.getSelected();
@@ -140,25 +149,25 @@ class Playlist {
         }
     }
     
-    public static void pause() {
+    public void pause() {
         paused = true;
         musicOrchestra.pause();
     }
 
-    public static void resume() {
+    public void resume() {
         paused = false;
         musicOrchestra.play();
     }
 
-    public static void play(String fileName) {
+    public void play(String fileName) {
         System.out.println("Now playing: " + fileName);
         musicOrchestra.loadMusic(fileName);
         paused = false;
         musicOrchestra.play();
     }
     
-    public static void play() { resume(); }
-    public static boolean getLooping() { return loop; }
-    public static void setLooping(boolean b) { loop = b; }
+    public void play() { resume(); }
+    public boolean getLooping() { return loop; }
+    public void setLooping(boolean b) { loop = b; }
 
 }

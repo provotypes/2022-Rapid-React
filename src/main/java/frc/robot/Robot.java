@@ -168,7 +168,7 @@ public class Robot extends TimedRobot {
 
     //SlewRateLimiter filter = new SlewRateLimiter(0.5);
 
-    //Playlist.setMotors(List.of(rightFlywheel, leftFlywheel, rightClimber, leftClimber));
+    //Playlist.getInstance().setMotors(List.of(rightFlywheel, leftFlywheel, rightClimber, leftClimber));
 
     Shuffleboard.selectTab("Data");
 
@@ -203,7 +203,7 @@ public class Robot extends TimedRobot {
     rightMotor2.burnFlash();
     // intakeActuator.burnFlash();
 
-    //Playlist.load();
+    //Playlist.getInstance().load();
 
     encoders = List.of(leftEncoder1, leftEncoder2, rightEncoder1, rightEncoder1);
 
@@ -236,7 +236,7 @@ public class Robot extends TimedRobot {
     }
     //lightStrip.displayColor(defaultColor);
 
-    //Playlist.update();
+    //Playlist.getInstance().update();
   }
 
   /**
