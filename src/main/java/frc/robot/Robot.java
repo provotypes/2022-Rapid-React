@@ -43,10 +43,10 @@ public class Robot extends TimedRobot {
   ////////////////////////////
   // ------- Motors ------- //
   ////////////////////////////
-  private final CANSparkMax leftMotor1 = new CANSparkMax(1, MotorType.kBrushless);
-  private final CANSparkMax leftMotor2 = new CANSparkMax(2, MotorType.kBrushless);
-  private final CANSparkMax rightMotor1 = new CANSparkMax(3, MotorType.kBrushless);
-  private final CANSparkMax rightMotor2 = new CANSparkMax(4, MotorType.kBrushless);
+  private final CANSparkMax leftMotor1 = new CANSparkMax(3, MotorType.kBrushless);
+  private final CANSparkMax leftMotor2 = new CANSparkMax(4, MotorType.kBrushless);
+  private final CANSparkMax rightMotor1 = new CANSparkMax(1, MotorType.kBrushless);
+  private final CANSparkMax rightMotor2 = new CANSparkMax(2, MotorType.kBrushless);
   private final MotorControllerGroup leftMotors = new MotorControllerGroup(leftMotor1, leftMotor2);
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(rightMotor1, rightMotor2);
   private final double driveRampRate = 0.5;
