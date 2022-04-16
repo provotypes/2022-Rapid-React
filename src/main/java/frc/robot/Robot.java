@@ -11,12 +11,16 @@ import java.util.Map;
 //import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMax.SoftLimitDirection;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.SparkMaxRelativeEncoder.Type;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
@@ -58,10 +62,19 @@ public class Robot extends TimedRobot {
 
   private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
   private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
+  /**
+ * Convert 2000 RPM to units / 100ms.
+ * 2048 Units/Rev * 2000 RPM / 600 100ms/min in either direction:
+ * velocity setpoint is in units/100ms
+ */
+  private double shooterVelocity = 2000.0 * 2048.0 / 600.0;
   // private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
 
   private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
   private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
+  private RelativeEncoder actuatorEncoder;
+  private SparkMaxPIDController intakeController;
+  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput;
 
   /////////////////////////////////
   // ------- Controllers ------- //
@@ -153,6 +166,7 @@ public class Robot extends TimedRobot {
     ResetSpark(leftMotor2, driveRampRate);
     ResetSpark(rightMotor1, driveRampRate);
     ResetSpark(rightMotor2, driveRampRate);
+    intake.getActuator().restoreFactoryDefaults();
     // leftIntake.configFactoryDefault();
     // rightIntake.configFactoryDefault();
     // intakeActuator.restoreFactoryDefaults();
@@ -163,6 +177,30 @@ public class Robot extends TimedRobot {
     
     intake.getActuator().setIdleMode(IdleMode.kBrake);
     intake.getActuator().setOpenLoopRampRate(.4);
+    intake.getActuator().setInverted(true);
+    // intake.getActuator().setSmartCurrentLimit(30);
+    intake.getActuator().setSecondaryCurrentLimit(20);
+    actuatorEncoder = intake.getActuator().getEncoder(Type.kQuadrature, 1024);
+    actuatorEncoder.setPosition(0);
+    // intake.getActuator().enableSoftLimit(SoftLimitDirection.kForward, true);
+    // intake.getActuator().enableSoftLimit(SoftLimitDirection.kReverse, true);
+    // intake.getActuator().setSoftLimit(SoftLimitDirection.kForward, -350);
+    // intake.getActuator().setSoftLimit(SoftLimitDirection.kReverse, 10);
+
+    intakeController = intake.getActuator().getPIDController();
+    kP = 0.1; 
+    kI = 1e-4;
+    kD = 1; 
+    kIz = 0; 
+    kFF = 0; 
+    kMaxOutput = .5; 
+    kMinOutput = -.5;
+    intakeController.setP(kP);
+    intakeController.setI(kI);
+    intakeController.setD(kD);
+    intakeController.setIZone(kIz);
+    intakeController.setFF(kFF);
+    intakeController.setOutputRange(kMinOutput, kMaxOutput);
 
     //TODO
     // leftMotor1.setSmartCurrentLimit(0, 12, 0);
@@ -195,6 +233,15 @@ public class Robot extends TimedRobot {
     leftFlywheel.setNeutralMode(NeutralMode.Coast);
     rightFlywheel.setNeutralMode(NeutralMode.Coast);
     // rightFlywheel.follow(leftFlywheel);
+    leftFlywheel.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, 0);
+    leftFlywheel.configNominalOutputForward(0, 0);
+		leftFlywheel.configNominalOutputReverse(0, 0);
+		leftFlywheel.configPeakOutputForward(1, 0);
+		leftFlywheel.configPeakOutputReverse(-1, 0);
+    leftFlywheel.config_kF(0, 1023.0/20660.0, 0); //1023 represents output value to Talon at 100%, 20660 represents Velocity units at 100% output; at least, that's what the documentation says
+		leftFlywheel.config_kP(0, 0.1, 0);
+		leftFlywheel.config_kI(0, 0.001, 0);
+		leftFlywheel.config_kD(0, 5, 0);
 
     rightClimber.setInverted(true);
     leftClimber.setNeutralMode(NeutralMode.Brake);
@@ -249,7 +296,8 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
 
     //gyroHeading.setDouble(gyro.getYaw());
-    intakeActuatorGraph.setDouble(intake.getActuator().getAppliedOutput());
+    // intakeActuatorGraph.setDouble(intake.getActuator().getOutputCurrent());
+    intakeActuatorGraph.setDouble(actuatorEncoder.getPosition());  //about 320 until 
     // intakeActuatorGraph.setDouble(leftFlywheel.getSelectedSensorVelocity());
     flywheelSpeed = flywheelSpeedSlider.getDouble(0);
 
@@ -358,8 +406,9 @@ public class Robot extends TimedRobot {
 
     if (xboxController.getRightTriggerAxis() > .1) {
       // flywheelMotors.set(flywheelSpeed);
-      leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
-      // leftFlywheel.set(TalonFXControlMode.Velocity, 12500); 
+      //leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
+			/* 2000 RPM in either direction */
+			leftFlywheel.set(TalonFXControlMode.Velocity, shooterVelocity);
     }
     else if (xboxController.getLeftTriggerAxis() > .1) {
       leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
@@ -384,13 +433,15 @@ public class Robot extends TimedRobot {
       rightClimber.overrideLimitSwitchesEnable(true);
     }
 
-    if (joystick.getRawButton(6)) {
+    if (joystick.getRawButton(4)) { //y button
       // intake.out();     
-      intake.getActuator().set(-1);
+      // intake.getActuator().set(-1);
+      intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
     }
-    else if (joystick.getRawButton(4)) {
+    else if (joystick.getRawButton(6)) { //right bumper
       // intake.in();
-      intake.getActuator().set(1);
+      // intake.getActuator().set(1);
+      intakeController.setReference(300, CANSparkMax.ControlType.kPosition);
     }
     else {
       intake.getActuator().set(0);
@@ -415,16 +466,16 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
-    if (leftEncoderPos == null) {
-      leftEncoderPos = dataTab.add("Left Encoders", 0).getEntry();
-      rightEncoderPos = dataTab.add("Right Encoders", 0).getEntry();
-    }
+    // if (leftEncoderPos == null) {
+    //   leftEncoderPos = dataTab.add("Left Encoders", 0).getEntry();
+    //   rightEncoderPos = dataTab.add("Right Encoders", 0).getEntry();
+    // }
   }
 
   @Override
   public void testPeriodic() {
-    leftEncoderPos.setDouble((leftEncoder1.getPosition() + leftEncoder2.getPosition())/2);
-    rightEncoderPos.setDouble((rightEncoder1.getPosition() + rightEncoder2.getPosition())/2);
+    // leftEncoderPos.setDouble((leftEncoder1.getPosition() + leftEncoder2.getPosition())/2);
+    // rightEncoderPos.setDouble((rightEncoder1.getPosition() + rightEncoder2.getPosition())/2);
   }
 
   @Override
