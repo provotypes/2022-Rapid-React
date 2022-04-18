@@ -54,6 +54,7 @@ public class Robot extends TimedRobot {
   private final MotorControllerGroup leftMotors = new MotorControllerGroup(leftMotor1, leftMotor2);
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(rightMotor1, rightMotor2);
   private final double driveRampRate = 0.5;
+  private final SlewRateLimiter filter = new SlewRateLimiter(0.8);
 
   // private final WPI_VictorSPX leftIntake = new WPI_VictorSPX(7);
   // private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
@@ -114,7 +115,7 @@ public class Robot extends TimedRobot {
   public double flywheelSpeed;
 
   private UsbCamera camera;  //Camera causes robot code to be deleted
-  private NetworkTableEntry intakeActuatorGraph;
+  private NetworkTableEntry testingGraph;
   private PowerDistribution PDP = new PowerDistribution();
 
   //////////////////////////////////
@@ -210,7 +211,7 @@ public class Robot extends TimedRobot {
     
     rightMotors.setInverted(true);
     driveTrain = new DifferentialDrive(leftMotors, rightMotors);
-    driveTrain.setDeadband(0.1);
+    // driveTrain.setDeadband(0.1);
 
     leftEncoder1 = leftMotor1.getEncoder();
     leftEncoder2 = leftMotor2.getEncoder();
@@ -248,7 +249,6 @@ public class Robot extends TimedRobot {
     rightClimber.setNeutralMode(NeutralMode.Brake);
     rightClimber.follow(leftClimber);
 
-    // SlewRateLimiter filter = new SlewRateLimiter(0.5);
 
     Shuffleboard.selectTab("Data");
 
@@ -260,7 +260,7 @@ public class Robot extends TimedRobot {
     // gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
     dataTab.add("Gyro Heading", gyro).withWidget(BuiltInWidgets.kGyro);
 
-    intakeActuatorGraph = dataTab.add("Intake Actuator Voltage", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
+    testingGraph = dataTab.add("Flywheel Velocity", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
 
     // NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
     // dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
@@ -268,9 +268,9 @@ public class Robot extends TimedRobot {
     // dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
     dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
 
-    flywheelSpeedSlider = dataTab.add("Flywheel Speed", .7)
+    flywheelSpeedSlider = dataTab.add("Flywheel Speed (RPM)", 500)
     .withWidget(BuiltInWidgets.kNumberSlider)
-    .withProperties(Map.of("min", 0, "max", 1))
+    .withProperties(Map.of("min", 1, "max", 20660 * 600.0 / 2048.0))
     .getEntry();
 
     DriverStation.getAlliance();
@@ -297,10 +297,8 @@ public class Robot extends TimedRobot {
 
     //gyroHeading.setDouble(gyro.getYaw());
     // intakeActuatorGraph.setDouble(intake.getActuator().getOutputCurrent());
-    intakeActuatorGraph.setDouble(actuatorEncoder.getPosition());  //about 320 until 
+    testingGraph.setDouble(leftFlywheel.getSelectedSensorVelocity() * 600.0 / 2048.0);
     // intakeActuatorGraph.setDouble(leftFlywheel.getSelectedSensorVelocity());
-    flywheelSpeed = flywheelSpeedSlider.getDouble(0);
-
     if (DriverStation.isFMSAttached()) {
       if (DriverStation.getAlliance()==DriverStation.Alliance.Blue) {
         defaultColor = ColorChoices.BlueSolid;
@@ -384,14 +382,30 @@ public class Robot extends TimedRobot {
   }
 
   double drive_speed = 0.0;
+  double prev_drive_speed = 0.0;
+  double noFilterSpeed = 0.0;
+  int duration = 0;
   @Override
   public void teleopPeriodic() {
     intake.update();
 
+    prev_drive_speed = drive_speed;
     drive_speed = xboxController.getLeftY();
 
+    // drive_speed = Math.sqrt(Math.abs(drive_speed)) * Math.signum(drive_speed);
 
-    driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.6);
+    // drive_speed = (drive_speed + Math.signum(drive_speed)) * drive_speed * drive_speed * 3;
+    // drive_speed = Math.max(Math.min(1, drive_speed), -1);
+
+    noFilterSpeed = drive_speed;
+    drive_speed = filter.calculate(drive_speed);
+
+    if (noFilterSpeed > prev_drive_speed || drive_speed > -.4) {
+      drive_speed = noFilterSpeed;
+    }
+
+
+    driveTrain.arcadeDrive(drive_speed * 0.8, -xboxController.getRightX() * 0.75);
 
     if (joystick.getRawButton(8)) {
       intake.on();
@@ -403,12 +417,14 @@ public class Robot extends TimedRobot {
       intake.off();
     }
 
+    flywheelSpeed = flywheelSpeedSlider.getDouble(0) * 2048.0 / 600.0;
 
     if (xboxController.getRightTriggerAxis() > .1) {
       // flywheelMotors.set(flywheelSpeed);
       //leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
 			/* 2000 RPM in either direction */
-			leftFlywheel.set(TalonFXControlMode.Velocity, shooterVelocity);
+			// leftFlywheel.set(TalonFXControlMode.Velocity, shooterVelocity);
+			leftFlywheel.set(TalonFXControlMode.Velocity, flywheelSpeed);
     }
     else if (xboxController.getLeftTriggerAxis() > .1) {
       leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
