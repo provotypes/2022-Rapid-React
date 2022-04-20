@@ -239,10 +239,10 @@ public class Robot extends TimedRobot {
 		leftFlywheel.configNominalOutputReverse(0, 0);
 		leftFlywheel.configPeakOutputForward(1, 0);
 		leftFlywheel.configPeakOutputReverse(-1, 0);
-    leftFlywheel.config_kF(0, 1023.0/20660.0, 0); //1023 represents output value to Talon at 100%, 20660 represents Velocity units at 100% output; at least, that's what the documentation says
-		leftFlywheel.config_kP(0, 0.1, 0);
-		leftFlywheel.config_kI(0, 0.001, 0);
-		leftFlywheel.config_kD(0, 5, 0);
+    leftFlywheel.config_kF(0, 0.0489, 0); //1023 represents output value to Talon at 100%, 20660 represents Velocity units at 100% output; at least, that's what the documentation says
+		leftFlywheel.config_kP(0, 0.04, 0);
+		leftFlywheel.config_kI(0, 0.0, 0);
+		leftFlywheel.config_kD(0, 0.4, 0);
 
     rightClimber.setInverted(true);
     leftClimber.setNeutralMode(NeutralMode.Brake);
@@ -424,7 +424,7 @@ public class Robot extends TimedRobot {
       //leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
 			/* 2000 RPM in either direction */
 			// leftFlywheel.set(TalonFXControlMode.Velocity, shooterVelocity);
-			leftFlywheel.set(TalonFXControlMode.Velocity, flywheelSpeed);
+			leftFlywheel.set(TalonFXControlMode.Velocity, 14000);
     }
     else if (xboxController.getLeftTriggerAxis() > .1) {
       leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
@@ -452,12 +452,12 @@ public class Robot extends TimedRobot {
     if (joystick.getRawButton(4)) { //y button
       // intake.out();     
       // intake.getActuator().set(-1);
-      intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
+      intakeController.setReference(-330, CANSparkMax.ControlType.kPosition);
     }
     else if (joystick.getRawButton(6)) { //right bumper
       // intake.in();
       // intake.getActuator().set(1);
-      intakeController.setReference(300, CANSparkMax.ControlType.kPosition);
+      intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
     }
     else {
       intake.getActuator().set(0);
