@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkMax.IdleMode;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -90,11 +89,16 @@ public class Auto {
                     gyro.zeroYaw();
                 }
                 intake.update();
-                intake.getActuator().set(-0.5);
+                //intake.getActuator().set(-0.5);
+
+                // intake.getActuator().setReference(-330, CANSparkMax.ControlType.kPosition);
+                intake.out();
                 time++;
-                if (time >= 30) {
+                if (time >= 90) {
                     task_status++;
-                    intake.getActuator().set(0);
+                    // intake.getActuator().set(0);
+                    intake.rest();
+                    intake.update();
                     resetEncoders();
                     time = 0;
                     called = false;
@@ -103,7 +107,7 @@ public class Auto {
             }
             case 0: {
                 if (!called) {
-                    intake.getActuator().setIdleMode(IdleMode.kCoast);
+                    // intake.getActuator().setIdleMode(IdleMode.kCoast);
                     intake.on();
                     called = true;
                 }
@@ -130,7 +134,7 @@ public class Auto {
                 if (time >= 20) {
                     intake.off();
                     intake.update();
-                    intake.getActuator().setIdleMode(IdleMode.kBrake);
+                    // intake.getActuator().setIdleMode(IdleMode.kBrake);
                 }
                 if (reached_distance) {
                     task_status++;
@@ -209,7 +213,7 @@ public class Auto {
             case 0: {
                 time++;
                 if (!called) {
-                    shooter.setPower(0.65);
+                    // shooter.setPower(0.65);
                     shooter.on();
                     called = true;
                 }
@@ -241,15 +245,18 @@ public class Auto {
                 if (!called) {
                     time = 0;
                     called = true;
-                    intake.getActuator().setIdleMode(IdleMode.kCoast);
+                    // intake.getActuator().setIdleMode(IdleMode.kCoast);
                     intake.out();
                 }
                 intake.update();
-                intake.getActuator().set(-0.5);
+
+                // intake.getActuator().set(-0.5);
+                intake.out();
                 time++;
                 if (time >= 30) {
                     task_status++;
-                    intake.getActuator().set(0);
+                    // intake.getActuator().set(0);
+                    intake.rest();
                     resetEncoders();
                     time = 0;
                     called = false;
@@ -262,7 +269,7 @@ public class Auto {
                 if (time >= 10) {
                     time = 0;
                     task_status++;
-                    intake.getActuator().setIdleMode(IdleMode.kBrake);
+                    // intake.getActuator().setIdleMode(IdleMode.kBrake);
                     resetEncoders();
                 }
                 break;
