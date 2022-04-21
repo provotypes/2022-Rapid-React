@@ -61,8 +61,8 @@ public class Robot extends TimedRobot {
   // private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
   // private final CANSparkMax intakeActuator = new CANSparkMax(5, MotorType.kBrushed);
 
-  private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
-  private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
+  // private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
+  // private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
   /**
  * Convert 2000 RPM to units / 100ms.
  * 2048 Units/Rev * 2000 RPM / 600 100ms/min in either direction:
@@ -73,8 +73,6 @@ public class Robot extends TimedRobot {
 
   private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
   private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
-  private RelativeEncoder actuatorEncoder;
-  private SparkMaxPIDController intakeController;
   public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput;
 
   /////////////////////////////////
@@ -114,9 +112,9 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry flywheelSpeedSlider;
   public double flywheelSpeed;
 
-  private UsbCamera camera;  //Camera causes robot code to be deleted
-  private NetworkTableEntry testingGraph;
-  private PowerDistribution PDP = new PowerDistribution();
+  // private UsbCamera camera;  //Camera causes robot code to be deleted
+  // private NetworkTableEntry testingGraph;
+  // private PowerDistribution PDP = new PowerDistribution();
 
   //////////////////////////////////
   // ------- Dependencies ------- //
@@ -136,7 +134,7 @@ public class Robot extends TimedRobot {
   // ------- Music ------- //
   ///////////////////////////
 
-  private WPI_TalonFX [] musicMotors = {leftFlywheel, rightFlywheel, leftClimber, rightClimber};
+  // private WPI_TalonFX [] musicMotors = {leftFlywheel, rightFlywheel, leftClimber, rightClimber};
   private Playlist playlist;
 
   private void ResetSpark(CANSparkMax motor, Double rampRate) {
@@ -160,48 +158,26 @@ public class Robot extends TimedRobot {
     // SmartDashboard.putData("Auto choices", m_chooser);
     dataTab.add("Auto Task", m_chooser).withSize(2, 1);
 
-    camera = CameraServer.startAutomaticCapture();
-    camera.setResolution(320, 240);
+    // camera = CameraServer.startAutomaticCapture();
+    // camera.setResolution(320, 240);
     
     ResetSpark(leftMotor1, driveRampRate);
     ResetSpark(leftMotor2, driveRampRate);
     ResetSpark(rightMotor1, driveRampRate);
     ResetSpark(rightMotor2, driveRampRate);
-    intake.getActuator().restoreFactoryDefaults();
     // leftIntake.configFactoryDefault();
     // rightIntake.configFactoryDefault();
     // intakeActuator.restoreFactoryDefaults();
-    ResetTalon(leftFlywheel);
-    ResetTalon(rightFlywheel);
+    // ResetTalon(leftFlywheel);
+    // ResetTalon(rightFlywheel);
     ResetTalon(leftClimber);
     ResetTalon(rightClimber);
     
-    intake.getActuator().setIdleMode(IdleMode.kBrake);
-    intake.getActuator().setOpenLoopRampRate(.4);
-    intake.getActuator().setInverted(true);
     // intake.getActuator().setSmartCurrentLimit(30);
-    intake.getActuator().setSecondaryCurrentLimit(20);
-    actuatorEncoder = intake.getActuator().getEncoder(Type.kQuadrature, 1024);
-    actuatorEncoder.setPosition(0);
     // intake.getActuator().enableSoftLimit(SoftLimitDirection.kForward, true);
     // intake.getActuator().enableSoftLimit(SoftLimitDirection.kReverse, true);
     // intake.getActuator().setSoftLimit(SoftLimitDirection.kForward, -350);
     // intake.getActuator().setSoftLimit(SoftLimitDirection.kReverse, 10);
-
-    intakeController = intake.getActuator().getPIDController();
-    kP = 0.1; 
-    kI = 1e-4;
-    kD = 1; 
-    kIz = 0; 
-    kFF = 0; 
-    kMaxOutput = .5; 
-    kMinOutput = -.5;
-    intakeController.setP(kP);
-    intakeController.setI(kI);
-    intakeController.setD(kD);
-    intakeController.setIZone(kIz);
-    intakeController.setFF(kFF);
-    intakeController.setOutputRange(kMinOutput, kMaxOutput);
 
     //TODO
     // leftMotor1.setSmartCurrentLimit(0, 12, 0);
@@ -229,20 +205,10 @@ public class Robot extends TimedRobot {
     // leftIntake.setNeutralMode(NeutralMode.Coast);
     // intakeActuator.setIdleMode(IdleMode.kBrake); 
     
-    rightFlywheel.follow(leftFlywheel);
-    rightFlywheel.setInverted(true);
-    leftFlywheel.setNeutralMode(NeutralMode.Coast);
-    rightFlywheel.setNeutralMode(NeutralMode.Coast);
+
+
     // rightFlywheel.follow(leftFlywheel);
-    leftFlywheel.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, 0);
-    leftFlywheel.configNominalOutputForward(0, 0);
-		leftFlywheel.configNominalOutputReverse(0, 0);
-		leftFlywheel.configPeakOutputForward(1, 0);
-		leftFlywheel.configPeakOutputReverse(-1, 0);
-    leftFlywheel.config_kF(0, 0.0489, 0); //1023 represents output value to Talon at 100%, 20660 represents Velocity units at 100% output; at least, that's what the documentation says
-		leftFlywheel.config_kP(0, 0.04, 0);
-		leftFlywheel.config_kI(0, 0.0, 0);
-		leftFlywheel.config_kD(0, 0.4, 0);
+
 
     rightClimber.setInverted(true);
     leftClimber.setNeutralMode(NeutralMode.Brake);
@@ -260,13 +226,13 @@ public class Robot extends TimedRobot {
     // gyroHeading = dataTab.add("Gyro Heading", 0).withWidget(BuiltInWidgets.kGyro).getEntry();
     dataTab.add("Gyro Heading", gyro).withWidget(BuiltInWidgets.kGyro);
 
-    testingGraph = dataTab.add("Flywheel Velocity", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
+    // testingGraph = dataTab.add("Flywheel Velocity", 0).withWidget(BuiltInWidgets.kGraph).withSize(2, 2).getEntry();
 
     // NetworkTableEntry pdpview = dataTab.add("PDP", 0).withWidget(BuiltInWidgets.kPowerDistribution).getEntry();
     // dataTab.add(PDP).withWidget(BuiltInWidgets.kPowerDistribution);
     // TODO
     // dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
-    dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
+    // dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
 
     flywheelSpeedSlider = dataTab.add("Flywheel Speed (RPM)", 500)
     .withWidget(BuiltInWidgets.kNumberSlider)
@@ -297,7 +263,7 @@ public class Robot extends TimedRobot {
 
     //gyroHeading.setDouble(gyro.getYaw());
     // intakeActuatorGraph.setDouble(intake.getActuator().getOutputCurrent());
-    testingGraph.setDouble(leftFlywheel.getSelectedSensorVelocity() * 600.0 / 2048.0);
+    //testingGraph.setDouble(leftFlywheel.getSelectedSensorVelocity() * 600.0 / 2048.0);
     // intakeActuatorGraph.setDouble(leftFlywheel.getSelectedSensorVelocity());
     if (DriverStation.isFMSAttached()) {
       if (DriverStation.getAlliance()==DriverStation.Alliance.Blue) {
@@ -387,7 +353,6 @@ public class Robot extends TimedRobot {
   int duration = 0;
   @Override
   public void teleopPeriodic() {
-    intake.update();
 
     prev_drive_speed = drive_speed;
     drive_speed = xboxController.getLeftY();
@@ -424,13 +389,16 @@ public class Robot extends TimedRobot {
       //leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
 			/* 2000 RPM in either direction */
 			// leftFlywheel.set(TalonFXControlMode.Velocity, shooterVelocity);
-			leftFlywheel.set(TalonFXControlMode.Velocity, 14000);
+			// leftFlywheel.set(TalonFXControlMode.Velocity, 14000);
+      shooter.on();
     }
     else if (xboxController.getLeftTriggerAxis() > .1) {
-      leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
+      // leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
+      shooter.on();
     }
     else {
-      leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);
+      // leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);
+      shooter.off();
       // leftFlywheel.set(TalonFXControlMode.Velocity, 0);
     }
 
@@ -452,16 +420,22 @@ public class Robot extends TimedRobot {
     if (joystick.getRawButton(4)) { //y button
       // intake.out();     
       // intake.getActuator().set(-1);
-      intakeController.setReference(-330, CANSparkMax.ControlType.kPosition);
+
+      // intakeController.setReference(-330, CANSparkMax.ControlType.kPosition);
+      intake.out();
     }
     else if (joystick.getRawButton(6)) { //right bumper
       // intake.in();
       // intake.getActuator().set(1);
-      intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
+
+      // intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
+      intake.in();
     }
     else {
-      intake.getActuator().set(0);
+      intake.rest();
     }
+    shooter.update();
+    intake.update();
 
   }
 
