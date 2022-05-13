@@ -73,7 +73,7 @@ public class Shooter {
 
     private void _on() {
         // flywheelMotors.set(power);
-        leftFlywheel.set(TalonFXControlMode.Velocity, 13900);
+        leftFlywheel.set(TalonFXControlMode.Velocity, 10800); //was 13900, not sure why it changed
     }
 
     private void _off() {
