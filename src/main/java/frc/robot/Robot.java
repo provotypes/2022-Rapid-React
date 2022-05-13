@@ -112,7 +112,7 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry flywheelSpeedSlider;
   public double flywheelSpeed;
 
-  // private UsbCamera camera;  //Camera causes robot code to be deleted
+  // private UsbCamera camera;  //Camera causes robot code to be deleted (I mean it wasn't actually that but we still hate the camera)
   // private NetworkTableEntry testingGraph;
   // private PowerDistribution PDP = new PowerDistribution();
 
@@ -369,8 +369,12 @@ public class Robot extends TimedRobot {
       drive_speed = noFilterSpeed;
     }
 
+    if (drive_speed > prev_drive_speed) {
+      drive_speed = Math.min(drive_speed, prev_drive_speed + 0.02);
+    }
 
-    driveTrain.arcadeDrive(drive_speed * 0.8, -xboxController.getRightX() * 0.75);
+
+    driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.75);
 
     if (joystick.getRawButton(8)) {
       intake.on();
