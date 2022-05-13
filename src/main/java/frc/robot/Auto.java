@@ -87,6 +87,7 @@ public class Auto {
                     intake.out();
                     
                     gyro.zeroYaw();
+                    System.out.println("Reset Gyro");
                 }
                 intake.update();
                 //intake.getActuator().set(-0.5);
@@ -94,7 +95,7 @@ public class Auto {
                 // intake.getActuator().setReference(-330, CANSparkMax.ControlType.kPosition);
                 intake.out();
                 time++;
-                if (time >= 90) {
+                if (time >= 60) {
                     task_status++;
                     // intake.getActuator().set(0);
                     intake.rest();
@@ -139,11 +140,17 @@ public class Auto {
                 if (reached_distance) {
                     task_status++;
                     resetEncoders();
-                    gyro.zeroYaw();
+                    time = 0;
+                    // gyro.zeroYaw();
                 }
                 break;
             }
             case 3: {
+                task_status++;
+
+                break;
+            }
+            case 4: {
                 boolean reached_angle = turn(170);
 
                 if (reached_angle) {
@@ -152,7 +159,7 @@ public class Auto {
                 }
                 break;
             }
-            case 4: {
+            case 5: {
                 time++;
 
                 if (time >= 10) {
@@ -161,7 +168,7 @@ public class Auto {
                 }
                 break;
             }
-            case 5: {
+            case 6: {
                 boolean reached_angle = slow_turn(180);
 
                 if (reached_angle) {
@@ -171,17 +178,28 @@ public class Auto {
 
                 break;
             }
-            case 6: {
-                boolean reached_distance = drive(3.5*12, -0.5);
+            case 7: {
+                boolean reached_distance = drive((3 + (3/12))*12, -0.5);
 
                 if (reached_distance) {
                     task_status++;
+                    // shooter.on();
+                    time = 0;
+                }
+                break;
+            }
+            case 8: {
+                time++;
+
+                if (time >= 50) {
+                    task_status++;
+                    time = 0;
                     shooter.on();
                     shooter.update();
                 }
                 break;
             }
-            case 7: {
+            case 9: {
                 time++;
                 shooter.update();
                 if (time >= 100) {
@@ -253,13 +271,14 @@ public class Auto {
                 // intake.getActuator().set(-0.5);
                 intake.out();
                 time++;
-                if (time >= 30) {
+                if (time >= 52) {
                     task_status++;
                     // intake.getActuator().set(0);
                     intake.rest();
                     resetEncoders();
                     time = 0;
                     called = false;
+                    intake.update();
                 }
                 break; 
             }
