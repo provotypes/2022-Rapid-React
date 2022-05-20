@@ -3,11 +3,15 @@ package frc.robot;
 import java.util.Map;
 import static java.util.Map.entry;
 
+import com.ctre.phoenix.motorcontrol.FollowerType;
 // import com.ctre.phoenix.motorcontrol.FollowerType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
+import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import static frc.robot.Robot.resetMotor;
+
 
 // import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 
@@ -18,6 +22,11 @@ public class Shooter {
     private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
     // private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
 
+    /**
+    * Convert 2000 RPM to units / 100ms.
+    * 2048 Units/Rev * 2000 RPM / 600 100ms/min in either direction:
+    * velocity setpoint is in units/100ms
+    */
     private final double defaultPower = 0.7;
     private double power = 0.7;
 
@@ -44,12 +53,10 @@ public class Shooter {
     }
 
     private void init() {
-        leftFlywheel.configFactoryDefault();
-        rightFlywheel.configFactoryDefault();
+        resetMotor(leftFlywheel, NeutralMode.Coast);
+        resetMotor(rightFlywheel, NeutralMode.Coast);
         rightFlywheel.follow(leftFlywheel);
         rightFlywheel.setInverted(true);
-        leftFlywheel.setNeutralMode(NeutralMode.Coast);
-        rightFlywheel.setNeutralMode(NeutralMode.Coast);
 
         leftFlywheel.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, 0);
         leftFlywheel.configNominalOutputForward(0, 0);

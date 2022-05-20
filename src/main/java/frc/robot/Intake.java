@@ -4,6 +4,7 @@ import java.util.Map;
 
 import static java.util.Map.entry;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -11,6 +12,7 @@ import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxRelativeEncoder.Type;
+import static frc.robot.Robot.resetMotor;
 
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 
@@ -25,15 +27,13 @@ public class Intake {
     
     
     private Intake() {
-        intakeActuator.restoreFactoryDefaults();
-        intakeActuator.setIdleMode(IdleMode.kBrake);
-        intakeActuator.setOpenLoopRampRate(.4);
-        intakeActuator.setInverted(true);
+        resetMotor(rightIntake, NeutralMode.Coast);
+        resetMotor(leftIntake, NeutralMode.Coast);
+        resetMotor(intakeActuator, .4, IdleMode.kBrake); //idle value currently does nothing with closed loop
         actuatorEncoder = intakeActuator.getEncoder(Type.kQuadrature, 1024);
         actuatorEncoder.setPosition(0);
         intakeController = intakeActuator.getPIDController();
         // intakeActuator.setSecondaryCurrentLimit(20);
-
 
         intakeController.setP(1, 1); //0 to -65 at 4096 per rev
         intakeController.setI(0, 1);
@@ -41,8 +41,6 @@ public class Intake {
         intakeController.setIZone(0, 1);
         intakeController.setFF(0, 1);
         intakeController.setOutputRange(-.85, .85, 1);
-
-        System.out.println("Did intake setup");
     }
 
     enum IntakeModes {
@@ -70,14 +68,6 @@ public class Intake {
 
     private IntakeModes mode = IntakeModes.intakeOff;
     private IntakeActuatorModes actMode = IntakeActuatorModes.intakeIn;
-
-    // enum IntakeState {
-    //     In,
-    //     Out,
-    //     movingIn,
-    //     movingOut
-    // }
-    // private IntakeState state = IntakeState.In;
 
     public static Intake getInstance() {
         if(instance == null) { 

@@ -7,20 +7,15 @@ package frc.robot;
 import java.util.List;
 import java.util.Map;
 
-//import com.ctre.phoenix.motorcontrol.ControlMode;
-//import com.ctre.phoenix.motorcontrol.GroupMotorControllers;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
-import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.IdleMode;
-import com.revrobotics.CANSparkMax.SoftLimitDirection;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.SparkMaxRelativeEncoder.Type;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
@@ -37,7 +32,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import frc.robot.LedStrip.ColorChoices;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PowerDistribution;
 
 public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -56,24 +50,8 @@ public class Robot extends TimedRobot {
   private final double driveRampRate = 0.5;
   private final SlewRateLimiter filter = new SlewRateLimiter(0.8);
 
-  // private final WPI_VictorSPX leftIntake = new WPI_VictorSPX(7);
-  // private final WPI_VictorSPX rightIntake = new WPI_VictorSPX(8);
-  // private final MotorControllerGroup intakeMotors = new MotorControllerGroup(leftIntake, rightIntake);
-  // private final CANSparkMax intakeActuator = new CANSparkMax(5, MotorType.kBrushed);
-
-  // private final WPI_TalonFX leftFlywheel = new WPI_TalonFX(9);
-  // private final WPI_TalonFX rightFlywheel = new WPI_TalonFX(10);
-  /**
- * Convert 2000 RPM to units / 100ms.
- * 2048 Units/Rev * 2000 RPM / 600 100ms/min in either direction:
- * velocity setpoint is in units/100ms
- */
-  private double shooterVelocity = 2000.0 * 2048.0 / 600.0;
-  // private MotorControllerGroup flywheelMotors = new MotorControllerGroup(leftFlywheel, rightFlywheel);
-
   private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
   private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
-  public double kP, kI, kD, kIz, kFF, kMaxOutput, kMinOutput;
 
   /////////////////////////////////
   // ------- Controllers ------- //
@@ -86,7 +64,7 @@ public class Robot extends TimedRobot {
   // ------- Autonomous ------- //
   ////////////////////////////////
 
-  String task = "None";
+  private String task = "None";
 
   private RelativeEncoder leftEncoder1;
   private RelativeEncoder leftEncoder2;
@@ -108,13 +86,11 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
 
-  // Flywheels
-  private NetworkTableEntry flywheelSpeedSlider;
-  public double flywheelSpeed;
-
-  // private UsbCamera camera;  //Camera causes robot code to be deleted (I mean it wasn't actually that but we still hate the camera)
+  private NetworkTableEntry testNumberSlider;
+  public double testNumber;
   // private NetworkTableEntry testingGraph;
-  // private PowerDistribution PDP = new PowerDistribution();
+
+  // private UsbCamera camera;
 
   //////////////////////////////////
   // ------- Dependencies ------- //
@@ -137,13 +113,21 @@ public class Robot extends TimedRobot {
   // private WPI_TalonFX [] musicMotors = {leftFlywheel, rightFlywheel, leftClimber, rightClimber};
   private Playlist playlist;
 
-  private void ResetSpark(CANSparkMax motor, Double rampRate) {
+  public static void resetMotor(CANSparkMax motor, Double rampRate, IdleMode idleMode) {
     motor.restoreFactoryDefaults();
     motor.setOpenLoopRampRate(rampRate);
+    motor.setIdleMode(idleMode);
+    motor.burnFlash();
   }
 
-  private void ResetTalon(WPI_TalonFX motor) {
+  public static void resetMotor(WPI_TalonFX motor, NeutralMode idleMode) {
     motor.configFactoryDefault();
+    motor.setNeutralMode(idleMode);
+  }
+
+  public static void resetMotor(WPI_VictorSPX motor, NeutralMode idleMode) {
+    motor.configFactoryDefault();
+    motor.setNeutralMode(idleMode);
   }
 
   @Override
@@ -161,23 +145,13 @@ public class Robot extends TimedRobot {
     // camera = CameraServer.startAutomaticCapture();
     // camera.setResolution(320, 240);
     
-    ResetSpark(leftMotor1, driveRampRate);
-    ResetSpark(leftMotor2, driveRampRate);
-    ResetSpark(rightMotor1, driveRampRate);
-    ResetSpark(rightMotor2, driveRampRate);
-    // leftIntake.configFactoryDefault();
-    // rightIntake.configFactoryDefault();
-    // intakeActuator.restoreFactoryDefaults();
-    // ResetTalon(leftFlywheel);
-    // ResetTalon(rightFlywheel);
-    ResetTalon(leftClimber);
-    ResetTalon(rightClimber);
-    
-    // intake.getActuator().setSmartCurrentLimit(30);
-    // intake.getActuator().enableSoftLimit(SoftLimitDirection.kForward, true);
-    // intake.getActuator().enableSoftLimit(SoftLimitDirection.kReverse, true);
-    // intake.getActuator().setSoftLimit(SoftLimitDirection.kForward, -350);
-    // intake.getActuator().setSoftLimit(SoftLimitDirection.kReverse, 10);
+    resetMotor(leftMotor1, driveRampRate, IdleMode.kCoast);
+    resetMotor(leftMotor2, driveRampRate, IdleMode.kCoast);
+    resetMotor(rightMotor1, driveRampRate, IdleMode.kCoast);
+    resetMotor(rightMotor2, driveRampRate, IdleMode.kCoast);
+    resetMotor(leftClimber, NeutralMode.Brake);
+    resetMotor(rightClimber, NeutralMode.Brake);
+  
 
     //TODO
     // leftMotor1.setSmartCurrentLimit(0, 12, 0);
@@ -201,18 +175,10 @@ public class Robot extends TimedRobot {
 
     // rightIntake.setInverted(false);
     // leftIntake.setInverted(false);
-    // rightIntake.setNeutralMode(NeutralMode.Coast);
-    // leftIntake.setNeutralMode(NeutralMode.Coast);
-    // intakeActuator.setIdleMode(IdleMode.kBrake); 
-    
 
-
-    // rightFlywheel.follow(leftFlywheel);
 
 
     rightClimber.setInverted(true);
-    leftClimber.setNeutralMode(NeutralMode.Brake);
-    rightClimber.setNeutralMode(NeutralMode.Brake);
     rightClimber.follow(leftClimber);
 
 
@@ -234,20 +200,12 @@ public class Robot extends TimedRobot {
     // dataTab.addCamera("Front View", camera.getName(), "mjpg:http://0.0.0.0:1181/?action=stream");
     // dataTab.add("Front View", camera).withWidget(BuiltInWidgets.kCameraStream).withSize(2, 2);
 
-    flywheelSpeedSlider = dataTab.add("Flywheel Speed (RPM)", 500)
+    testNumberSlider = dataTab.add("Test Number Slider", 500)
     .withWidget(BuiltInWidgets.kNumberSlider)
     .withProperties(Map.of("min", 1, "max", 20660 * 600.0 / 2048.0))
     .getEntry();
 
-    DriverStation.getAlliance();
-
     lightStrip = new LedStrip(0);
-
-    leftMotor1.burnFlash();
-    leftMotor2.burnFlash();
-    rightMotor1.burnFlash();
-    rightMotor2.burnFlash();
-    // intakeActuator.burnFlash();
 
     // playlist = new Playlist(musicMotors);
 
@@ -386,24 +344,14 @@ public class Robot extends TimedRobot {
       intake.off();
     }
 
-    flywheelSpeed = flywheelSpeedSlider.getDouble(0) * 2048.0 / 600.0;
-
     if (xboxController.getRightTriggerAxis() > .1) {
-      // flywheelMotors.set(flywheelSpeed);
-      //leftFlywheel.set(TalonFXControlMode.PercentOutput, .68);
-			/* 2000 RPM in either direction */
-			// leftFlywheel.set(TalonFXControlMode.Velocity, shooterVelocity);
-			// leftFlywheel.set(TalonFXControlMode.Velocity, 14000);
       shooter.on();
     }
     else if (xboxController.getLeftTriggerAxis() > .1) {
-      // leftFlywheel.set(TalonFXControlMode.PercentOutput, .60);
       shooter.on();
     }
     else {
-      // leftFlywheel.set(TalonFXControlMode.PercentOutput, 0);
       shooter.off();
-      // leftFlywheel.set(TalonFXControlMode.Velocity, 0);
     }
 
     if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//climber down
@@ -416,23 +364,17 @@ public class Robot extends TimedRobot {
       leftClimber.set(TalonFXControlMode.PercentOutput, 0);
     };
 
+    /* currently unused
     if (xboxController.getStartButtonPressed()) {
       leftClimber.overrideLimitSwitchesEnable(true);
       rightClimber.overrideLimitSwitchesEnable(true);
     }
+    */
 
-    if (joystick.getRawButton(4)) { //y button
-      // intake.out();     
-      // intake.getActuator().set(-1);
-
-      // intakeController.setReference(-330, CANSparkMax.ControlType.kPosition);
+    if (joystick.getRawButton(4)) {
       intake.out();
     }
-    else if (joystick.getRawButton(6)) { //right bumper
-      // intake.in();
-      // intake.getActuator().set(1);
-
-      // intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
+    else if (joystick.getRawButton(6)) {
       intake.in();
     }
     else {
