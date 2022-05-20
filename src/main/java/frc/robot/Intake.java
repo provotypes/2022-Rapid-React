@@ -27,29 +27,21 @@ public class Intake {
     private Intake() {
         intakeActuator.restoreFactoryDefaults();
         intakeActuator.setIdleMode(IdleMode.kBrake);
-        intakeActuator.setInverted(true);
         intakeActuator.setOpenLoopRampRate(.4);
+        intakeActuator.setInverted(true);
         actuatorEncoder = intakeActuator.getEncoder(Type.kQuadrature, 1024);
         actuatorEncoder.setPosition(0);
         intakeController = intakeActuator.getPIDController();
         // intakeActuator.setSecondaryCurrentLimit(20);
 
-        /*
-            kP = 0.1; 
-        kI = 1e-4;
-        kD = 1; 
-        kIz = 0; 
-        kFF = 0; 
-        kMaxOutput = 1; 
-        kMinOutput = -.1;
-        */
 
-        intakeController.setP(0.1);
-        intakeController.setI(1e-4);
-        intakeController.setD(1);
-        intakeController.setIZone(0);
-        intakeController.setFF(0);
-        intakeController.setOutputRange(.5, -.5);
+        intakeController.setP(1, 1); //0 to -65 at 4096 per rev
+        intakeController.setI(0, 1);
+        intakeController.setD(0, 1);
+        intakeController.setIZone(0, 1);
+        intakeController.setFF(0, 1);
+        intakeController.setOutputRange(-.85, .85, 1);
+
         System.out.println("Did intake setup");
     }
 
@@ -146,22 +138,13 @@ public class Intake {
     }
 
     private void executeOut() {
-        // intakeMotors.set(0);
-        // intakeActuator.set(.5);
-        
-        System.out.println("Putting Out");
-        System.out.println(actuatorEncoder.getPosition());
-        // intakeController.setReference(-220, CANSparkMax.ControlType.kPosition);
-        intakeActuator.set(.75);
+        intakeController.setReference(260, CANSparkMax.ControlType.kPosition, 1);
+        // intakeActuator.set(.75);
     }
 
     private void executeIn() {
-        // intakeMotors.set(0);
-        // intakeActuator.set(-.5);
-        System.out.println("Bringing in");
-        System.out.println(actuatorEncoder.getPosition()); 
-        // intakeController.setReference(0, CANSparkMax.ControlType.kPosition);
-        intakeActuator.set(-.75);
+        intakeController.setReference(0, CANSparkMax.ControlType.kPosition, 1);
+        // intakeActuator.set(-.75);
     }
 
     private void executeReverse() {
