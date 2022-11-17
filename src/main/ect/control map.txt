@@ -1,0 +1,16 @@
+-- controls --
+
+move foreward/back == left joystick
+turn               == right joystick
+climber up         == up d-pad
+climber down       == down d-pad
+low power shoot    == rt 
+high power shoot   == lt 
+
+/////////////////////////////////////////////
+TO MAKE:
+
+run intake in      == A
+run intake out     == B 
+intake up          == Y
+intake down        == X

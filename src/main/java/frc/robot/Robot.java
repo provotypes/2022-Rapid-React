@@ -311,9 +311,11 @@ public class Robot extends TimedRobot {
   int duration = 0;
   @Override
   public void teleopPeriodic() {
-
+    //hold the trigger
+    if (joystick.getTrigger())
+    {
     prev_drive_speed = drive_speed;
-    drive_speed = xboxController.getLeftY();
+    drive_speed = xboxController.getLeftY() / 2;
 
     // drive_speed = Math.sqrt(Math.abs(drive_speed)) * Math.signum(drive_speed);
 
@@ -332,12 +334,12 @@ public class Robot extends TimedRobot {
     }
 
 
-    driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.75);
+    driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.40);
 
-    if (joystick.getRawButton(8)) {
+    if (joystick.getRawButton(8) || xboxController.getAButton()) {
       intake.on();
     }
-    else if (joystick.getRawButton(7)) {
+    else if (joystick.getRawButton(7) || xboxController.getBButton()) {
       intake.reverse();
     }
     else {
@@ -380,9 +382,15 @@ public class Robot extends TimedRobot {
     else {
       intake.rest();
     }
+    }
+    else {
+      leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+      driveTrain.arcadeDrive(0,0);
+      shooter.off();
+      intake.off();
+    };
     shooter.update();
     intake.update();
-
   }
 
   @Override

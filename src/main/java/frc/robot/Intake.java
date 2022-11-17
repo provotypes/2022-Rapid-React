@@ -35,7 +35,7 @@ public class Intake {
         intakeController = intakeActuator.getPIDController();
         // intakeActuator.setSecondaryCurrentLimit(20);
 
-        intakeController.setP(1, 1); //0 to -65 at 4096 per rev
+        intakeController.setP(0.5, 1); //0 to -65 at 4096 per rev
         intakeController.setI(0, 1);
         intakeController.setD(0, 1);
         intakeController.setIZone(0, 1);
