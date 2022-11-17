@@ -312,76 +312,75 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     //hold the trigger
-    if (joystick.getTrigger())
-    {
-    prev_drive_speed = drive_speed;
-    drive_speed = xboxController.getLeftY() / 2;
+    if (joystick.getTrigger()) {
+        prev_drive_speed = drive_speed;
+        drive_speed = xboxController.getLeftY() * 0.6;
 
-    // drive_speed = Math.sqrt(Math.abs(drive_speed)) * Math.signum(drive_speed);
+        // drive_speed = Math.sqrt(Math.abs(drive_speed)) * Math.signum(drive_speed);
 
-    // drive_speed = (drive_speed + Math.signum(drive_speed)) * drive_speed * drive_speed * 3;
-    // drive_speed = Math.max(Math.min(1, drive_speed), -1);
+        // drive_speed = (drive_speed + Math.signum(drive_speed)) * drive_speed * drive_speed * 3;
+        // drive_speed = Math.max(Math.min(1, drive_speed), -1);
 
-    noFilterSpeed = drive_speed;
-    drive_speed = filter.calculate(drive_speed);
+        noFilterSpeed = drive_speed;
+        drive_speed = filter.calculate(drive_speed);
 
-    if (noFilterSpeed > prev_drive_speed || drive_speed > -.4) {
-      drive_speed = noFilterSpeed;
-    }
+        if (noFilterSpeed > prev_drive_speed || drive_speed > -.4) {
+          drive_speed = noFilterSpeed;
+        }
 
-    if (drive_speed > prev_drive_speed) {
-      drive_speed = Math.min(drive_speed, prev_drive_speed + 0.02);
-    }
+        if (drive_speed > prev_drive_speed) {
+          drive_speed = Math.min(drive_speed, prev_drive_speed + 0.02);
+        }
 
 
-    driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.40);
+        driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.40);
 
-    if (joystick.getRawButton(8) || xboxController.getAButton()) {
-      intake.on();
-    }
-    else if (joystick.getRawButton(7) || xboxController.getBButton()) {
-      intake.reverse();
-    }
-    else {
-      intake.off();
-    }
+        if (joystick.getRawButton(8) || xboxController.getAButton()) {
+          intake.on();
+        }
+        else if (joystick.getRawButton(7) || xboxController.getBButton()) {
+          intake.reverse();
+        }
+        else {
+          intake.off();
+        }
 
-    if (xboxController.getRightTriggerAxis() > .1) {
-      shooter.on();
-    }
-    else if (xboxController.getLeftTriggerAxis() > .1) {
-      shooter.on();
-    }
-    else {
-      shooter.off();
-    }
+        if (xboxController.getRightTriggerAxis() > .1) {
+          shooter.on();
+        }
+        else if (xboxController.getLeftTriggerAxis() > .1) {
+          shooter.on();
+        }
+        else {
+          shooter.off();
+        }
 
-    if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//climber down
-      leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
-    }
-    else if (joystick.getRawButton(10) || xboxController.getPOV() == 0) {
-      leftClimber.set(TalonFXControlMode.PercentOutput, .85);
-    }
-    else {
-      leftClimber.set(TalonFXControlMode.PercentOutput, 0);
-    };
+        if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//climber down
+          leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
+        }
+        else if (joystick.getRawButton(10) || xboxController.getPOV() == 0) {
+          leftClimber.set(TalonFXControlMode.PercentOutput, .85);
+        }
+        else {
+          leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+        };
 
-    /* currently unused
-    if (xboxController.getStartButtonPressed()) {
-      leftClimber.overrideLimitSwitchesEnable(true);
-      rightClimber.overrideLimitSwitchesEnable(true);
-    }
-    */
+        /* currently unused
+        if (xboxController.getStartButtonPressed()) {
+          leftClimber.overrideLimitSwitchesEnable(true);
+          rightClimber.overrideLimitSwitchesEnable(true);
+        }
+        */
 
-    if (joystick.getRawButton(4)) {
-      intake.out();
-    }
-    else if (joystick.getRawButton(6)) {
-      intake.in();
-    }
-    else {
-      intake.rest();
-    }
+        if (joystick.getRawButton(4)) {
+          intake.out();
+        }
+        else if (joystick.getRawButton(6)) {
+          intake.in();
+        }
+        else {
+          intake.rest();
+        }
     }
     else {
       leftClimber.set(TalonFXControlMode.PercentOutput, 0);
