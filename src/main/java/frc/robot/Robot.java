@@ -20,6 +20,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -86,7 +87,7 @@ public class Robot extends TimedRobot {
   private NetworkTableEntry leftEncoderPos;
   private NetworkTableEntry rightEncoderPos;
 
-  private NetworkTableEntry testNumberSlider;
+  private GenericEntry testNumberSlider;
   public double testNumber;
   // private NetworkTableEntry testingGraph;
 
