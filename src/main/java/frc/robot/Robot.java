@@ -13,13 +13,19 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.hal.SimDouble;
+import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -29,15 +35,20 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.LedStrip.ColorChoices;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.RobotController;
 
 public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   
   private DifferentialDrive driveTrain;
+  private DifferentialDrivetrainSim simDriveTrain;
 
   ////////////////////////////
   // ------- Motors ------- //
@@ -53,6 +64,12 @@ public class Robot extends TimedRobot {
 
   private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
   private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
+
+  private REVPhysicsSim physicsSim = REVPhysicsSim.getInstance();
+  private int dev = SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]");
+  private SimDouble angle = new SimDouble(SimDeviceDataJNI.getSimValueHandle(dev, "Yaw"));
+  private Field2d field = new Field2d();
+  private DifferentialDriveOdometry odometry;
 
   /////////////////////////////////
   // ------- Controllers ------- //
@@ -74,7 +91,8 @@ public class Robot extends TimedRobot {
   private List<RelativeEncoder> encoders;
   private final AHRS gyro = new AHRS();
 
-  private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI; // inches
+  /* THIS SHOULD DEFINITELY BE CHANGED SOON */
+  private final double DISTANCE_PER_ROTATION = Units.inchesToMeters(1.0d / 8.0d * 6.1d * Math.PI); // inches to meters
   // 42 counts per revolution for the encoders
 
   private Auto autonomous;
@@ -152,6 +170,11 @@ public class Robot extends TimedRobot {
     resetMotor(rightMotor2, driveRampRate, IdleMode.kCoast);
     resetMotor(leftClimber, NeutralMode.Brake);
     resetMotor(rightClimber, NeutralMode.Brake);
+
+    physicsSim.addSparkMax(leftMotor1, DCMotor.getNEO(1));
+    physicsSim.addSparkMax(leftMotor2, DCMotor.getNEO(1));
+    physicsSim.addSparkMax(rightMotor1, DCMotor.getNEO(1));
+    physicsSim.addSparkMax(rightMotor2, DCMotor.getNEO(1));
   
 
     //TODO
@@ -163,6 +186,19 @@ public class Robot extends TimedRobot {
     rightMotors.setInverted(true);
     driveTrain = new DifferentialDrive(leftMotors, rightMotors);
     // driveTrain.setDeadband(0.1);
+
+    simDriveTrain = new DifferentialDrivetrainSim(
+      DCMotor.getNEO(2), 
+      7.29, 
+      7.5, 
+      60, 
+      Units.inchesToMeters(3), 
+      Units.inchesToMeters(21), 
+      null);
+
+    SmartDashboard.putData("Field", field);
+
+    odometry = new DifferentialDriveOdometry(gyro.getRotation2d(), leftEncoder1.getPosition(), rightEncoder1.getPosition());
 
     leftEncoder1 = leftMotor1.getEncoder();
     leftEncoder2 = leftMotor2.getEncoder();
@@ -313,7 +349,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     //hold the trigger
-    if (joystick.getTrigger()) {
+    // if (joystick.getTrigger()) {
         prev_drive_speed = drive_speed;
         drive_speed = xboxController.getLeftY() * 0.6;
 
@@ -382,13 +418,13 @@ public class Robot extends TimedRobot {
         else {
           intake.rest();
         }
-    }
-    else {
+    // }
+    // else {
       leftClimber.set(TalonFXControlMode.PercentOutput, 0);
       driveTrain.arcadeDrive(0,0);
       shooter.off();
       intake.off();
-    };
+    // };
     shooter.update();
     intake.update();
   }
@@ -426,7 +462,19 @@ public class Robot extends TimedRobot {
   public void simulationInit() {}
 
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    simDriveTrain.setInputs(leftMotor1.get() * RobotController.getInputCurrent(), -rightMotor1.get() * RobotController.getInputVoltage());
+
+    simDriveTrain.update(0.02);
+    physicsSim.run();
+
+    // REV's encoders should hopefully simulate by themselves 
+
+    angle.set(-simDriveTrain.getHeading().getDegrees());
+
+    odometry.update(gyro.getRotation2d(), leftEncoder1.getPosition(), rightEncoder1.getPosition());
+    field.setRobotPose(odometry.getPoseMeters());
+  }
 
   public void brake() {
     leftMotor1.setIdleMode(IdleMode.kBrake);

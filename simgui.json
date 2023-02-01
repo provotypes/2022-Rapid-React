@@ -1,0 +1,19 @@
+{
+  "HALProvider": {
+    "Other Devices": {
+      "navX-Sensor[0]": {
+        "header": {
+          "open": true
+        }
+      }
+    }
+  },
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/Shuffleboard/Data/Auto Task": "String Chooser",
+      "/Shuffleboard/Data/Gyro Heading": "Gyro",
+      "/Shuffleboard/LEDs/SendableChooser[1]": "String Chooser"
+    }
+  }
+}
