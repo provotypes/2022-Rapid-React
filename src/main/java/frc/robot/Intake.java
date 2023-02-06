@@ -128,13 +128,13 @@ public class Intake {
     }
 
     private void executeOut() {
-        intakeController.setReference(260, CANSparkMax.ControlType.kPosition, 1);
-        // intakeActuator.set(.75);
+        // intakeController.setReference(260, CANSparkMax.ControlType.kPosition, 1);
+        intakeActuator.set(.75);
     }
 
     private void executeIn() {
-        intakeController.setReference(0, CANSparkMax.ControlType.kPosition, 1);
-        // intakeActuator.set(-.75);
+        // intakeController.setReference(0, CANSparkMax.ControlType.kPosition, 1);
+        intakeActuator.set(-.75);
     }
 
     private void executeReverse() {

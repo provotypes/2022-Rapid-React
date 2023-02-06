@@ -110,7 +110,7 @@ public class Robot extends TimedRobot {
   // ------- Music ------- //
   ///////////////////////////
 
-  // private WPI_TalonFX [] musicMotors = {leftFlywheel, rightFlywheel, leftClimber, rightClimber};
+  // private WPI_TalonFX [] musicMotors = {leftClimber, rightClimber}; //leftFlywheel, rightFlywheel, };
   private Playlist playlist;
 
   public static void resetMotor(CANSparkMax motor, Double rampRate, IdleMode idleMode) {
@@ -309,10 +309,11 @@ public class Robot extends TimedRobot {
   double prev_drive_speed = 0.0;
   double noFilterSpeed = 0.0;
   int duration = 0;
+
   @Override
   public void teleopPeriodic() {
     //hold the trigger
-    if (joystick.getTrigger()) {
+    if (!joystick.getTrigger()) {
         prev_drive_speed = drive_speed;
         drive_speed = xboxController.getLeftY() * 0.6;
 
@@ -387,6 +388,7 @@ public class Robot extends TimedRobot {
       driveTrain.arcadeDrive(0,0);
       shooter.off();
       intake.off();
+      intake.rest();
     };
     shooter.update();
     intake.update();
