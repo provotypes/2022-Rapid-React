@@ -2,7 +2,7 @@ package frc.robot;
 
 import java.util.Map;
 
-import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.AnalogOutput;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -19,8 +19,8 @@ public class LedStrip {
     private AnalogOutput strip;
 
     private ShuffleboardTab LEDTab = Shuffleboard.getTab("LEDs");
-    private NetworkTableEntry lightMode;
-    private NetworkTableEntry voltage;
+    private GenericEntry lightMode;
+    private GenericEntry voltage;
     private final SendableChooser<ColorChoices> colorChoicer = new SendableChooser<>();
 
 
