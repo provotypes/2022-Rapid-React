@@ -6,29 +6,41 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import static frc.robot.Robot.resetMotor;
+
+import java.util.Map;
+import static java.util.Map.entry;
 
 /** Add your docs here. */
 public class Climber {
     private static Climber instance;
-    private final WPI_TalonFX leftClimber = new WPI_TalonFX(7);
-    private final WPI_TalonFX rightClimber = new WPI_TalonFX(7);
+    private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
+    private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
 
     private Climber() {
         resetMotor(leftClimber, NeutralMode.Brake);
         resetMotor(rightClimber, NeutralMode.Brake);
-        rightClimber.setInverted(true);
+        // rightClimber.setInverted(true);
         rightClimber.follow(leftClimber);
+        rightClimber.setInverted(TalonFXInvertType.OpposeMaster);
 
     }
 
     //TODO try storing actions as lambdas in the enum
     enum ClimbingStates {
-        climberUp ,
+        climberUp,
         climberDown,
         climberOff
     }
+
+    final Map<ClimbingStates, Runnable> climbingStates = Map.ofEntries(
+        entry(ClimbingStates.climberOff, this::off),
+        entry(ClimbingStates.climberUp, this::up),
+        entry(ClimbingStates.climberDown, this::down)
+    );
 
     private ClimbingStates state = ClimbingStates.climberOff;
     
@@ -37,6 +49,10 @@ public class Climber {
             instance = new Climber();
         }
         return instance;
+    }
+
+    public void update() {
+        climbingStates.get(state).run();
     }
 
     public void off() {
@@ -56,6 +72,10 @@ public class Climber {
     }
 
     private void executeUp() {
-        // leftClimber.set
+        leftClimber.set(TalonFXControlMode.PercentOutput, .85);
+    }
+
+    private void executeDown() {
+        leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
     }
 }

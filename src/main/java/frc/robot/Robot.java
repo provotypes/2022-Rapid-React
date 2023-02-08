@@ -51,8 +51,8 @@ public class Robot extends TimedRobot {
   private final double driveRampRate = 0.5;
   private final SlewRateLimiter filter = new SlewRateLimiter(0.8);
 
-  private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
-  private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
+  // private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
+  // private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
 
   /////////////////////////////////
   // ------- Controllers ------- //
@@ -99,6 +99,7 @@ public class Robot extends TimedRobot {
 
   private Intake intake = Intake.getInstance();
   private Shooter shooter = Shooter.getInstance();
+  private Climber climber = Climber.getInstance();
 
   //////////////////////////////
   // ------- Lighting ------- //
@@ -150,8 +151,8 @@ public class Robot extends TimedRobot {
     resetMotor(leftMotor2, driveRampRate, IdleMode.kCoast);
     resetMotor(rightMotor1, driveRampRate, IdleMode.kCoast);
     resetMotor(rightMotor2, driveRampRate, IdleMode.kCoast);
-    resetMotor(leftClimber, NeutralMode.Brake);
-    resetMotor(rightClimber, NeutralMode.Brake);
+    // resetMotor(leftClimber, NeutralMode.Brake);
+    // resetMotor(rightClimber, NeutralMode.Brake);
   
 
     //TODO
@@ -179,8 +180,8 @@ public class Robot extends TimedRobot {
 
 
 
-    rightClimber.setInverted(true);
-    rightClimber.follow(leftClimber);
+    // rightClimber.setInverted(true);
+    // rightClimber.follow(leftClimber);
 
 
     Shuffleboard.selectTab("Data");
@@ -358,13 +359,16 @@ public class Robot extends TimedRobot {
         }
 
         if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//climber down
-          leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
+          // leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
+          climber.down();
         }
         else if (joystick.getRawButton(10) || xboxController.getPOV() == 0) {
-          leftClimber.set(TalonFXControlMode.PercentOutput, .85);
+          // leftClimber.set(TalonFXControlMode.PercentOutput, .85);
+          climber.up();
         }
         else {
-          leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+          // leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+          climber.off();
         };
 
         /* currently unused
@@ -385,7 +389,8 @@ public class Robot extends TimedRobot {
         }
     }
     else {
-      leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+      // leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+      climber.off();
       driveTrain.arcadeDrive(0,0);
       shooter.off();
       intake.off();
@@ -393,6 +398,7 @@ public class Robot extends TimedRobot {
     };
     shooter.update();
     intake.update();
+    climber.update();
   }
 
   @Override
