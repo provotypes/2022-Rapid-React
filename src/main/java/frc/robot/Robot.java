@@ -91,8 +91,7 @@ public class Robot extends TimedRobot {
   private List<RelativeEncoder> encoders;
   private final AHRS gyro = new AHRS();
 
-  /* THIS SHOULD DEFINITELY BE CHANGED SOON */
-  private final double DISTANCE_PER_ROTATION = Units.inchesToMeters(1.0d / 8.0d * 6.1d * Math.PI); // inches to meters
+  private final double DISTANCE_PER_ROTATION = 1.0d / 8.0d * 6.1d * Math.PI;
   // 42 counts per revolution for the encoders
 
   private Auto autonomous;
@@ -197,14 +196,14 @@ public class Robot extends TimedRobot {
       null);
 
     SmartDashboard.putData("Field", field);
-
-    odometry = new DifferentialDriveOdometry(gyro.getRotation2d(), leftEncoder1.getPosition(), rightEncoder1.getPosition());
-
+    
     leftEncoder1 = leftMotor1.getEncoder();
     leftEncoder2 = leftMotor2.getEncoder();
     rightEncoder1 = rightMotor1.getEncoder();
     rightEncoder2 = rightMotor2.getEncoder();
 
+    odometry = new DifferentialDriveOdometry(gyro.getRotation2d(), leftEncoder1.getPosition(), rightEncoder1.getPosition());
+    
     leftEncoder1.setPositionConversionFactor(DISTANCE_PER_ROTATION);
     leftEncoder2.setPositionConversionFactor(DISTANCE_PER_ROTATION);
     rightEncoder1.setPositionConversionFactor(DISTANCE_PER_ROTATION);
@@ -472,7 +471,7 @@ public class Robot extends TimedRobot {
 
     angle.set(-simDriveTrain.getHeading().getDegrees());
 
-    odometry.update(gyro.getRotation2d(), leftEncoder1.getPosition(), rightEncoder1.getPosition());
+    odometry.update(gyro.getRotation2d(), Units.inchesToMeters(leftEncoder1.getPosition()), Units.inchesToMeters(rightEncoder1.getPosition()));
     field.setRobotPose(odometry.getPoseMeters());
   }
 
