@@ -23,9 +23,18 @@ public class Climber {
     private Climber() {
         resetMotor(leftClimber, NeutralMode.Brake);
         resetMotor(rightClimber, NeutralMode.Brake);
+
+        leftClimber.config_kP(0, 1);
+
+        // leftClimber.config_kP(0, 1.5);
+        // leftClimber.config_kD(0, .075);
         // rightClimber.setInverted(true);
         rightClimber.follow(leftClimber);
         rightClimber.setInverted(TalonFXInvertType.OpposeMaster);
+
+        /* 0 is in the down position and parallel to the floor
+         * 254399.000 units is all the way
+         */
 
     }
 
@@ -37,9 +46,9 @@ public class Climber {
     }
 
     final Map<ClimbingStates, Runnable> climbingStates = Map.ofEntries(
-        entry(ClimbingStates.climberOff, this::off),
-        entry(ClimbingStates.climberUp, this::up),
-        entry(ClimbingStates.climberDown, this::down)
+        entry(ClimbingStates.climberOff, this::executeOff),
+        entry(ClimbingStates.climberUp, this::executeUp),
+        entry(ClimbingStates.climberDown, this::executeDown)
     );
 
     private ClimbingStates state = ClimbingStates.climberOff;
@@ -72,10 +81,13 @@ public class Climber {
     }
 
     private void executeUp() {
-        leftClimber.set(TalonFXControlMode.PercentOutput, .85);
+        // leftClimber.set(TalonFXControlMode.PercentOutput, .85);
+        leftClimber.set(TalonFXControlMode.Position, 254400);
+
     }
 
     private void executeDown() {
-        leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
+        // leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
+        leftClimber.set(TalonFXControlMode.Position, 0);
     }
 }

@@ -358,7 +358,7 @@ public class Robot extends TimedRobot {
           shooter.off();
         }
 
-        if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//climber down
+        if (joystick.getRawButton(9) || xboxController.getPOV() == 180) {//c down
           // leftClimber.set(TalonFXControlMode.PercentOutput, -.85);
           climber.down();
         }
@@ -368,7 +368,7 @@ public class Robot extends TimedRobot {
         }
         else {
           // leftClimber.set(TalonFXControlMode.PercentOutput, 0);
-          climber.off();
+          // climber.off();
         };
 
         /* currently unused
