@@ -65,9 +65,6 @@ public class Robot extends TimedRobot {
   private final WPI_TalonFX leftClimber = new WPI_TalonFX(11);
   private final WPI_TalonFX rightClimber = new WPI_TalonFX(12);
 
-  private REVPhysicsSim physicsSim = REVPhysicsSim.getInstance();
-  private int dev = SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]");
-  private SimDouble angle = new SimDouble(SimDeviceDataJNI.getSimValueHandle(dev, "Yaw"));
   private Field2d field = new Field2d();
   private DifferentialDriveOdometry odometry;
 
@@ -170,10 +167,6 @@ public class Robot extends TimedRobot {
     resetMotor(leftClimber, NeutralMode.Brake);
     resetMotor(rightClimber, NeutralMode.Brake);
 
-    physicsSim.addSparkMax(leftMotor1, DCMotor.getNEO(1));
-    physicsSim.addSparkMax(leftMotor2, DCMotor.getNEO(1));
-    physicsSim.addSparkMax(rightMotor1, DCMotor.getNEO(1));
-    physicsSim.addSparkMax(rightMotor2, DCMotor.getNEO(1));
   
 
     //TODO
@@ -276,6 +269,11 @@ public class Robot extends TimedRobot {
     //lightStrip.displayColor(defaultColor);
 
     // playlist.update();
+
+    // SmartDashboard.putData(driveTrain);
+    // System.out.print(leftMotor1.get());
+    // System.out.print(rightMotor1.get());
+    // System.out.println();
   }
 
   /**
@@ -371,6 +369,10 @@ public class Robot extends TimedRobot {
 
         driveTrain.arcadeDrive(drive_speed, -xboxController.getRightX() * 0.40);
 
+        // System.out.print(drive_speed);
+        // System.out.print(-xboxController.getRightX() * 0.40);
+        // System.out.println();
+
         if (joystick.getRawButton(8) || xboxController.getAButton()) {
           intake.on();
         }
@@ -419,10 +421,10 @@ public class Robot extends TimedRobot {
         }
     // }
     // else {
-      leftClimber.set(TalonFXControlMode.PercentOutput, 0);
-      driveTrain.arcadeDrive(0,0);
-      shooter.off();
-      intake.off();
+      // leftClimber.set(TalonFXControlMode.PercentOutput, 0);
+      // driveTrain.arcadeDrive(0,0);
+      // shooter.off();
+      // intake.off();
     // };
     shooter.update();
     intake.update();
@@ -458,21 +460,33 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void simulationInit() {}
+  public void simulationInit() {
+    REVPhysicsSim.getInstance().addSparkMax(leftMotor1, DCMotor.getNEO(1));
+    REVPhysicsSim.getInstance().addSparkMax(leftMotor2, DCMotor.getNEO(1));
+    REVPhysicsSim.getInstance().addSparkMax(rightMotor1, DCMotor.getNEO(1));
+    REVPhysicsSim.getInstance().addSparkMax(rightMotor2, DCMotor.getNEO(1));
+  }
 
   @Override
   public void simulationPeriodic() {
-    simDriveTrain.setInputs(leftMotor1.get() * RobotController.getInputCurrent(), -rightMotor1.get() * RobotController.getInputVoltage());
-
+    simDriveTrain.setInputs(leftMotor1.get() * RobotController.getInputVoltage(), -rightMotor1.get() * RobotController.getInputVoltage());
     simDriveTrain.update(0.02);
-    physicsSim.run();
+    // REVPhysicsSim.getInstance().run();  //this doesn't work I guess since the drivebase controls the motors with percentage control, not velocity
 
-    // REV's encoders should hopefully simulate by themselves 
+    leftEncoder1.setPosition(Units.metersToInches(simDriveTrain.getLeftPositionMeters()));
+    leftEncoder2.setPosition(Units.metersToInches(simDriveTrain.getLeftPositionMeters()));
+    rightEncoder1.setPosition(Units.metersToInches(simDriveTrain.getLeftPositionMeters()));
+    rightEncoder2.setPosition(Units.metersToInches(simDriveTrain.getLeftPositionMeters()));
 
+    int dev = SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]");
+    SimDouble angle = new SimDouble(SimDeviceDataJNI.getSimValueHandle(dev, "Yaw"));
     angle.set(-simDriveTrain.getHeading().getDegrees());
 
     odometry.update(gyro.getRotation2d(), Units.inchesToMeters(leftEncoder1.getPosition()), Units.inchesToMeters(rightEncoder1.getPosition()));
     field.setRobotPose(odometry.getPoseMeters());
+    SmartDashboard.putData("Field", field);
+
+
   }
 
   public void brake() {
@@ -483,7 +497,7 @@ public class Robot extends TimedRobot {
   }
 
   public void coast() {
-    leftMotor1.setIdleMode(IdleMode.kCoast);
+    leftMotor1.setIdleMode(IdleMode.kCoast); 
     leftMotor2.setIdleMode(IdleMode.kCoast);
     rightMotor1.setIdleMode(IdleMode.kCoast);
     rightMotor2.setIdleMode(IdleMode.kCoast);
